@@ -1,0 +1,28 @@
+% ==============================================================================
+% Table II: Runtime Comparison (in seconds) Across 6 Dataset Categories
+% ==============================================================================
+\begin{table*}[t]
+\centering
+\caption{Computational Runtime Comparison (Seconds) Across 6 Infrared Dataset Categories}
+\label{tab:runtime_comparison}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccc}
+\toprule
+\textbf{Method} & \textbf{Yohann} & \textbf{DLS-NUC-D} & \textbf{Simu w/ TNO} & \textbf{Simu w/ M3FD} & \textbf{Simu w/ LLVIP} & \textbf{Simu w/ MSRS} & \textbf{Average} \\
+\midrule
+1D-GF (Cao 2016) & 0.0030 & 0.0029 & 0.0028 & 0.0030 & 0.0030 & 0.0028 & 0.0029 \\
+1D-WLS (Dong 2018) & 0.0034 & 0.0034 & 0.0034 & 0.0035 & 0.0034 & 0.0034 & 0.0034 \\
+ADOM (Kim 2023) & 0.1387 & 0.1385 & 0.1390 & 0.1386 & 0.1382 & 0.1382 & 0.1385 \\
+BM3D (Dabov 2007) & 5.4608 & 5.4700 & 5.4521 & 5.4530 & 5.4834 & 5.4899 & 5.4682 \\
+DLS-NUC (He 2019) & 0.0001 & 0.0001 & 0.0001 & 0.0001 & 0.0001 & 0.0001 & 0.0001 \\
+SNRCNN (Kuai 2017) & 0.0011 & 0.0011 & 0.0011 & 0.0011 & 0.0010 & 0.0010 & 0.0011 \\
+LRSID (Chang 2016) & 0.1936 & 0.1939 & 0.2037 & 0.1941 & 0.1937 & 0.1735 & 0.1921 \\
+GSRSR (Chen 2017) & 0.0256 & 0.0564 & 0.0252 & 0.0566 & 0.0567 & 0.0174 & 0.0397 \\
+SNRWDNN (Guan 2019) & 0.0007 & 0.0006 & 0.0006 & 0.0006 & 0.0006 & 0.0006 & 0.0006 \\
+DestripeCycleGAN (Xiao 2020) & 0.0009 & 0.0009 & 0.0008 & 0.0008 & 0.0008 & 0.0008 & 0.0009 \\
+\textbf{Ours (Single-Thread)} & 6.8002 & 7.0246 & 7.0116 & 7.0322 & 7.0725 & 6.9289 & \textbf{6.9783} \\
+\textbf{Ours (Parfor)} & 6.0290 & 6.0176 & 6.0590 & 6.0601 & 6.0599 & 5.9356 & \textbf{6.0269} \\
+\bottomrule
+\end{tabular}
+}
+\end{table*}
