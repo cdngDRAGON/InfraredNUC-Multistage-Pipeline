@@ -1,0 +1,34 @@
+% ==============================================================================
+% IEEE Sensors Journal - Section IV-B: Comparative Experiments and Benchmarks
+% ==============================================================================
+
+\subsection{Comparative Experimental Evaluation on Benchmark Scenes}
+To thoroughly evaluate the destriping efficacy, structural fidelity, and radiometric preservation of the proposed two-stage framework, we benchmark our method (\textbf{Ours}) against ten representative and state-of-the-art single-frame destriping algorithms spanning spatial/transform filtering, variational optimization, and deep learning architectures:
+\begin{enumerate}
+    \item \textbf{Filtering-based methods:} 1-D Guided Filter (\textbf{1D-GF})~\cite{cao20161d}, 1-D Weighted Least Squares (\textbf{1D-WLS})~\cite{dong2018infrared}, and Block-Matching and 3-D Filtering (\textbf{BM3D})~\cite{dabov2007image}.
+    \item \textbf{Optimization-based models:} ADMM Directional Optimization Model (\textbf{ADOM})~\cite{kim2023adom}, Low-Rank Single-Image Decomposition (\textbf{LRSID})~\cite{chang2016low}, and Group Sparsity Regularization Stripe Removal (\textbf{GSRSR})~\cite{chen2017infrared}.
+    \item \textbf{Deep learning-based architectures:} Shallow CNN destriper (\textbf{SNRCNN})~\cite{kuai2017deep}, Multiscale Residual Column Estimator (\textbf{DLS-NUC})~\cite{he2019single}, Wavelet Deep Neural Network (\textbf{SNRWDNN})~\cite{guan2019wavelet}, and Unpaired Adversarial Translation Destriper (\textbf{DestripeCycleGAN})~\cite{xiao2020destripecyclegan}.
+\end{enumerate}
+
+All eleven methods were evaluated on six standard infrared benchmark scenes ($256 \times 256$ pixels, floating-point radiometric intensities in $[0, 255]$) covering diverse spatial structures: high-contrast geometric blocks (\textit{Img1\_Checkerboard}), indoor thermal electronics (\textit{Img2\_IndoorMonitor}), outdoor urban sky facades (\textit{Img3\_BuildingSkyline}), human surveillance (\textit{Img4\_HousePedestrian}), repetitive architectural textures (\textit{Img5\_FacadeWindows}), and nighttime vehicular traffic (\textit{Img6\_StreetCars}).
+
+\subsubsection{Quantitative Analysis (Table I)}
+Table~\ref{tab:table1_quantitative_evaluation} provides the complete quantitative results across all seven objective metrics. The best score in each row is highlighted in \textbf{bold}, and the second-best is highlighted with an \underline{underline}.
+
+\input{table1_quantitative.tex}
+
+Key quantitative findings include:
+\begin{itemize}
+    \item \textbf{Reconstruction Fidelity (PSNR and SSIM):} The proposed method (\textbf{Ours}) consistently establishes the highest or second-highest PSNR and SSIM across all six benchmark scenes, achieving an average PSNR of $35.88$\,dB ($+10.20$\,dB gain over degraded input) and an average SSIM of $0.9068$. Deep learning models such as \textbf{SNRWDNN} ($32.45$\,dB) and \textbf{DestripeCycleGAN} ($31.82$\,dB) deliver competitive results but suffer from slight textural hallucination or ringing near specular boundaries.
+    \item \textbf{Vertical Detail Conservation (AVGE):} Filter-based approaches such as \textbf{1D-GF} and \textbf{1D-WLS} inadvertently smooth native vertical edges, yielding high AVGE scores ($> 3.8$). In contrast, by exploiting the second-order directional horizontal curvature $|\frac{\partial^2 \mathbf{C}}{\partial x^2}|$ in Stage~1 while leaving vertical derivatives unpenalized, \textbf{Ours} maintains an average AVGE below $2.75$, preserving authentic vertical building columns and human contours.
+    \item \textbf{Stripe Suppression (Roughness $\rho$):} While \textbf{BM3D} treats vertically coherent stripes as structural textures ($\rho = 0.1842$), \textbf{Ours} suppresses roughness to $\rho = 0.0482$, completely eradicating high-frequency column oscillations without introducing staircasing artifacts.
+    \item \textbf{Radiometric Fidelity (ICV, AAD, and MRD):} \textbf{Ours} delivers the highest Inverse Coefficient of Variation ($\mathrm{ICV} = 27.67$) in homogeneous sky and road patches, with minimal radiometric drift ($\mathrm{MRD} = 0.0433$), ensuring reliable thermal temperature readout.
+\end{itemize}
+
+\subsubsection{Qualitative Visual and 3D Energy Surface Inspection}
+Figs.~10 through 15 present the qualitative comparisons across the six benchmark scenes. Each panel features a $2 \times 6$ layout displaying the degraded image and all eleven comparison methods, with a red bounding box and magnified zoom inset on top and a 3D Global Energy surface profile underneath:
+\begin{itemize}
+    \item \textbf{Figs.~10 \& 11 (Yohann Scenes):} On the geometric checkerboard and indoor monitor, \textbf{1D-GF} and \textbf{ADOM} cause edge smearing across high-contrast steps. \textbf{Ours} recovers sharp, rectilinear boundaries and a smooth 3D energy basin free from jagged ripples.
+    \item \textbf{Figs.~12 \& 13 (He Scenes):} Across the building skyline and pedestrian scene, \textbf{LRSID} and \textbf{GSRSR} leave residual stripe shadows. \textbf{Ours} clearly delineates the pedestrian silhouette against the uniform pavement.
+    \item \textbf{Figs.~14 \& 15 (TNO \& LLVIP Scenes):} Across repetitive windows and hot vehicle exhausts, \textbf{Ours} eliminates stripe lines across car hoods while preserving glowing hot-spot radiometric profiles.
+\end{itemize}
