@@ -1,0 +1,15 @@
+# IEEE Sensors Journal (Feb 2026)
+# "Multistage Nonuniformity Correction Pipeline for Single-Frame Infrared Images
+#  Based on Hybrid High-Order Directional and Low-Rank Prior Information"
+# Pinned Scientific Computing & Computer Vision Dependencies
+
+numpy==2.4.6
+scipy==1.17.1
+pandas==3.1.1
+matplotlib==3.11.2
+seaborn==0.13.2
+scikit-image==0.26.0
+Pillow==13.0.0
+joblib==1.6.0
+pytest==9.2.0
+tabulate==0.10.0
