@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infrared NUC Pipeline Workbench | MATLAB App Designer R2024a Edition</title>
+  <style>
+    :root {
+      --matlab-blue: #0072BD;
+      --matlab-blue-dark: #005a96;
+      --matlab-orange: #D9531F;
+      --matlab-yellow: #EDB120;
+      --matlab-purple: #7E2F8E;
+      --matlab-green: #77AC30;
+      --bg-gray: #EBEEF0;
+      --panel-bg: #FFFFFF;
+      --border-gray: #D0D4D9;
+      --text-dark: #2B2B2B;
+      --text-muted: #555555;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-gray);
+      color: var(--text-dark);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* Header */
+    header {
+      background: var(--matlab-blue);
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--matlab-blue-dark);
+      flex-shrink: 0;
+    }
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .matlab-badge {
+      background: #D9531F;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 3px;
+      letter-spacing: 0.5px;
+    }
+    .header-links {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 13px;
+    }
+    .header-links a { color: white; text-decoration: none; font-weight: 500; }
+    .header-links a:hover { text-decoration: underline; }
+
+    /* Layout */
+    .app-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    /* Left Sidebar */
+    aside.sidebar {
+      width: 370px;
+      background: #F4F6F7;
+      border-right: 1px solid var(--border-gray);
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      flex-shrink: 0;
+    }
+    .panel-box {
+      background: white;
+      border: 1px solid var(--border-gray);
+      border-radius: 4px;
+      padding: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .panel-title {
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid #ECEFF1;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    /* Upload Drop Zone */
+    .drop-zone {
+      border: 2px dashed #B0BEC5;
+      border-radius: 4px;
+      padding: 16px;
+      text-align: center;
+      background: #FAFAFA;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--matlab-blue);
+      background: #EBF3F9;
+    }
+    .drop-zone p { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+
+    /* Form Controls */
+    label { font-size: 12px; font-weight: 600; display: block; margin-top: 8px; margin-bottom: 3px; }
+    select, input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 12px;
+      border: 1px solid var(--border-gray);
+      border-radius: 3px;
+      background: white;
+    }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .slider-row input[type="range"] { flex: 1; }
+    .slider-val { font-size: 11px; font-family: monospace; width: 40px; text-align: right; }
+
+    /* Action Buttons */
+    .btn-primary {
+      background: var(--matlab-blue);
+      color: white;
+      border: none;
+      border-radius: 3px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 4px rgba(0,114,189,0.25);
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: var(--matlab-blue-dark); }
+    .btn-secondary {
+      background: #ECEFF1;
+      color: var(--text-dark);
+      border: 1px solid var(--border-gray);
+      border-radius: 3px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 6px;
+    }
+    .btn-secondary:hover { background: #CFD8DC; }
+
+    /* Main Area */
+    main.main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg-gray);
+    }
+    /* Tabs Navigation */
+    .tabs-nav {
+      background: #E2E6E9;
+      display: flex;
+      border-bottom: 1px solid var(--border-gray);
+      padding: 0 15px;
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tab-btn.active {
+      color: var(--matlab-blue);
+      border-bottom-color: var(--matlab-blue);
+      background: white;
+    }
+    .tab-content {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: none;
+    }
+    .tab-content.active { display: block; }
+
+    /* Visual Pipeline 5-Card Layout */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+    .image-card {
+      background: white;
+      border: 1px solid var(--border-gray);
+      border-radius: 4px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .image-card h4 {
+      font-size: 11px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      text-align: center;
+      color: var(--text-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+    .image-card img {
+      width: 100%;
+      aspect-ratio: 1/1;
+      object-fit: contain;
+      background: black;
+      border-radius: 2px;
+      border: 1px solid #CCC;
+      cursor: pointer;
+    }
+    .image-stats {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 5px;
+      text-align: center;
+    }
+
+    /* Diagnostics & Charts */
+    .diag-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 15px;
+    }
+
+    /* Metrics Table */
+    table.matlab-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: white;
+    }
+    table.matlab-table th, table.matlab-table td {
+      padding: 8px 12px;
+      text-align: left;
+      border: 1px solid var(--border-gray);
+    }
+    table.matlab-table th {
+      background: #F1F4F6;
+      font-weight: bold;
+      color: var(--text-dark);
+    }
+    table.matlab-table tr:nth-child(even) { background: #FAFAFA; }
+    table.matlab-table tr:hover { background: #EBF3F9; }
+    .badge-ours {
+      background: var(--matlab-blue);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+
+    /* Split timing bar */
+    .split-bar-container {
+      margin-top: 6px;
+      height: 12px;
+      border-radius: 3px;
+      display: flex;
+      overflow: hidden;
+      background: #DDD;
+    }
+    .split-s1 { background: var(--matlab-blue); }
+    .split-s2 { background: var(--matlab-orange); }
+
+    /* Notification Banner */
+    #status-toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 18px;
+      background: #333;
+      color: white;
+      font-size: 12px;
+      border-radius: 4px;
+      display: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MATLAB Header -->
+  <header>
+    <div class="header-title">
+      <span class="matlab-badge">MATLAB R2024a</span>
+      <h2 style="font-size: 16px; font-weight: bold;">Infrared NUC Multi-Stage Pipeline Workbench</h2>
+      <span style="font-size: 12px; opacity: 0.85;">(Liu et al., IEEE Sensors J., Feb. 2026)</span>
+    </div>
+    <div class="header-links">
+      <span>IIIT Vadodara (GCD)</span>
+      <a href="/api/mappings" target="_blank">Mapping Registry API</a>
+      <a href="https://github.com/cdngDRAGON/InfraredNUC-Multistage-Pipeline" target="_blank">GitHub Repository</a>
+    </div>
+  </header>
+
+  <div class="app-container">
+
+    <!-- Left Controls Sidebar -->
+    <aside class="sidebar">
+
+      <!-- Upload Panel -->
+      <div class="panel-box">
+        <div class="panel-title">
+          <span>Input Acquisition</span>
+          <span style="font-size: 10px;">uploaded_inputs/</span>
+        </div>
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+          <input type="file" id="file-input" style="display:none" accept=".png,.jpg,.jpeg,.bmp,.mat">
+          <strong>Drop Infrared Image Here</strong>
+          <p>or click to browse (.png, .bmp, .jpg, .mat)</p>
+        </div>
+
+        <label for="dataset-select" style="margin-top: 10px;">Or Choose Real IR Benchmark Scene:</label>
+        <select id="dataset-select" onchange="loadPresetScene(this.value)">
+          <option value="">-- Select 47 Real IR Benchmark Images --</option>
+          <optgroup label="Canonical Benchmark Scenes (Paper Table I)">
+            <option value="data/clean_scenes/Img1_Checkerboard_Yohann.png">Img1: Checkerboard (Yohann) [256x256]</option>
+            <option value="data/clean_scenes/Img2_IndoorMonitor_Yohann.png">Img2: Indoor Monitor (Yohann) [256x256]</option>
+            <option value="data/clean_scenes/Img3_BuildingSkyline_He.png">Img3: Building Skyline (He) [256x256]</option>
+            <option value="data/clean_scenes/Img4_HousePedestrian_He.png">Img4: House Pedestrian (He) [256x256]</option>
+            <option value="data/clean_scenes/Img5_FacadeWindows_TNO.png">Img5: Facade Windows (TNO) [256x256]</option>
+            <option value="data/clean_scenes/Img6_StreetCars_LLVIP.png">Img6: Street Cars (LLVIP) [256x256]</option>
+          </optgroup>
+          <optgroup label="Real Uncalibrated Degraded IR (Yohann Tendero)">
+            <option value="data/real_degraded/yohann_mire/test1_8bits.png">Yohann Mire: test1_8bits.png [320x220]</option>
+            <option value="data/real_degraded/yohann_mire/test2_8bits.png">Yohann Mire: test2_8bits.png [384x284]</option>
+            <option value="data/real_degraded/yohann_mire/test3.png">Yohann Mire: test3.png [642x444]</option>
+            <option value="data/real_degraded/yohann_mire/test4.png">Yohann Mire: test4.png [384x269]</option>
+            <option value="data/real_degraded/yohann_mire/test_boat.png">Yohann Mire: test_boat.png [512x512]</option>
+            <option value="data/real_degraded/yohann_mire/8.png">Authors' Sample: 8.png [341x256]</option>
+          </optgroup>
+          <optgroup label="Real Thermal DLS-NUC Dataset (Z. He et al.)">
+            <option value="data/real_degraded/dls_nuc_he/input_01.png">DLS-NUC: input_01.png [384x288]</option>
+            <option value="data/real_degraded/dls_nuc_he/input_02.png">DLS-NUC: input_02.png [384x269]</option>
+            <option value="data/real_degraded/dls_nuc_he/input_03.png">DLS-NUC: input_03.png [384x288]</option>
+            <option value="data/real_degraded/dls_nuc_he/input_04.png">DLS-NUC: input_04.png [642x444]</option>
+            <option value="data/real_degraded/dls_nuc_he/input_05.png">DLS-NUC: input_05.png [320x220]</option>
+          </optgroup>
+        </select>
+        <button class="btn-secondary" onclick="batchProcessGroup()">Batch Process Dataset Group</button>
+      </div>
+
+      <!-- Algorithmic Parameters -->
+      <div class="panel-box">
+        <div class="panel-title">Algorithm Hyperparameters</div>
+
+        <label>Engine Mode:</label>
+        <select id="engine-mode">
+          <option value="proposed_ours">Proposed Pipeline (Ours - Full Power)</option>
+          <option value="matlab_port">Strict MATLAB Port Engine (admmAlgorithm.m)</option>
+        </select>
+
+        <label>Stage 1 ADMM Iterations (K):</label>
+        <div class="slider-row">
+          <input type="range" id="param-iter" min="20" max="100" value="40" oninput="document.getElementById('val-iter').innerText=this.value">
+          <span class="slider-val" id="val-iter">40</span>
+        </div>
+
+        <label>Stage 2 Patch Size (B x B):</label>
+        <div class="slider-row">
+          <input type="range" id="param-patch" min="5" max="15" step="2" value="11" oninput="document.getElementById('val-patch').innerText=this.value">
+          <span class="slider-val" id="val-patch">11</span>
+        </div>
+
+        <label>Stage 2 Top Similar Patches (L):</label>
+        <div class="slider-row">
+          <input type="range" id="param-l" min="20" max="80" step="5" value="50" oninput="document.getElementById('val-l').innerText=this.value">
+          <span class="slider-val" id="val-l">50</span>
+        </div>
+
+        <label>Noise Sigma (&sigma;<sub>n</sub>):</label>
+        <div class="slider-row">
+          <input type="range" id="param-sigma" min="0.5" max="15.0" step="0.5" value="1.0" oninput="document.getElementById('val-sigma').innerText=this.value">
+          <span class="slider-val" id="val-sigma">1.0</span>
+        </div>
+
+        <div style="margin-top: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+            <input type="checkbox" id="check-baselines"> Compare All 10 Baselines (Table I Mosaic)
+          </label>
+        </div>
+      </div>
+
+      <!-- Execution Action -->
+      <button class="btn-primary" id="btn-run" onclick="executeNUC()">
+        <span style="font-size: 16px;">&#9654;</span> Run NUC Pipeline
+      </button>
+
+      <!-- Active Run Quick Stats -->
+      <div class="panel-box" id="quick-stats-panel" style="display:none;">
+        <div class="panel-title">Active Run Telemetry</div>
+        <div style="font-size: 12px; display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span>PSNR Gain:</span>
+          <strong id="stat-psnr-gain" style="color: var(--matlab-blue);">+0.00 dB</strong>
+        </div>
+        <div style="font-size: 12px; display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span>Total Latency:</span>
+          <span id="stat-latency">0.00 s</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Stage 1 (~70%) vs Stage 2 (~30%) Split:</div>
+        <div class="split-bar-container">
+          <div class="split-s1" id="stat-bar-s1" style="width: 70%;"></div>
+          <div class="split-s2" id="stat-bar-s2" style="width: 30%;"></div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Main Tabs View -->
+    <main class="main-content">
+
+      <!-- Navigation Bar -->
+      <div class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab('tab-pipeline')">1. Stage-by-Stage Visual Pipeline</button>
+        <button class="tab-btn" onclick="switchTab('tab-diagnostics')">2. 3D Global Energy &amp; Scanlines</button>
+        <button class="tab-btn" onclick="switchTab('tab-metrics')">3. Quantitative Metrics &amp; Baselines</button>
+        <button class="tab-btn" onclick="switchTab('tab-registry')">4. Mapped Registry Explorer</button>
+      </div>
+
+      <!-- TAB 1: Stage-by-Stage Visual Pipeline -->
+      <div class="tab-content active" id="tab-pipeline">
+        <div class="pipeline-grid">
+          <div class="image-card">
+            <h4>(a) Degraded Input D</h4>
+            <img id="img-degraded" src="/files/placeholder.png" alt="Degraded Input" onclick="openLightbox(this.src)">
+            <div class="image-stats" id="stats-degraded">PSNR: -- dB</div>
+          </div>
+          <div class="image-card">
+            <h4>(b) Separated Stripe S(x,y)</h4>
+            <img id="img-stripe" src="/files/placeholder.png" alt="Stripe Noise" onclick="openLightbox(this.src)">
+            <div class="image-stats" id="stats-stripe">Std: --</div>
+          </div>
+          <div class="image-card">
+            <h4>(c) Stage 1 Destriped C1</h4>
+            <img id="img-stage1" src="/files/placeholder.png" alt="Stage 1 Restored" onclick="openLightbox(this.src)">
+            <div class="image-stats" id="stats-stage1">PSNR: -- dB</div>
+          </div>
+          <div class="image-card">
+            <h4>(d) Residual Noise N(x,y)</h4>
+            <img id="img-noise" src="/files/placeholder.png" alt="Environmental Noise" onclick="openLightbox(this.src)">
+            <div class="image-stats" id="stats-noise">Std: --</div>
+          </div>
+          <div class="image-card">
+            <h4>(e) Final Clean C2 (Ours)</h4>
+            <img id="img-final" src="/files/placeholder.png" alt="Final Clean" onclick="openLightbox(this.src)">
+            <div class="image-stats" id="stats-final" style="color: var(--matlab-blue); font-weight:bold;">PSNR: -- dB</div>
+          </div>
+        </div>
+
+        <div class="panel-box" style="margin-top: 10px;">
+          <div class="panel-title">
+            <span>High-Resolution Inspection Dashboard (300 DPI)</span>
+            <a id="link-dashboard-dl" href="#" target="_blank" style="font-size: 11px; text-decoration:none; color:var(--matlab-blue);">Download High-Res PNG</a>
+          </div>
+          <div style="text-align: center;">
+            <img id="img-dashboard-preview" src="/files/placeholder.png" style="max-width: 100%; border: 1px solid var(--border-gray); border-radius: 4px;" alt="Stage Progression Dashboard">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: 3D Global Energy & Scanlines -->
+      <div class="tab-content" id="tab-diagnostics">
+        <div class="panel-box">
+          <div class="panel-title">3D Global Energy Surface &amp; Directional Profile Diagnostics</div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">
+            Visualizing energy concentration in the 3D surface map and scanline attenuation across horizontal rows and vertical columns (Section III-B &amp; III-C).
+          </p>
+          <div style="text-align: center;">
+            <img id="img-diag-preview" src="/files/placeholder.png" style="max-width: 100%; border: 1px solid var(--border-gray); border-radius: 4px;" alt="Diagnostics Preview">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: Quantitative Metrics & Baselines -->
+      <div class="tab-content" id="tab-metrics">
+        <div class="panel-box" style="margin-bottom: 15px;">
+          <div class="panel-title">Quantitative Evaluation (IEEE Sensors Journal Table I Metrics)</div>
+          <table class="matlab-table" id="metrics-table">
+            <thead>
+              <tr>
+                <th>Method / Stage</th>
+                <th>PSNR (dB) &uarr;</th>
+                <th>SSIM &uarr;</th>
+                <th>AVGE &darr;</th>
+                <th>Roughness &rho; &darr;</th>
+                <th>ICV &uarr;</th>
+                <th>AAD &darr;</th>
+                <th>MRD &darr;</th>
+                <th>Latency (s) &darr;</th>
+              </tr>
+            </thead>
+            <tbody id="metrics-table-body">
+              <tr><td colspan="9" style="text-align:center; color:#888;">No run executed yet. Select a scene and click "Run NUC Pipeline".</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel-box">
+          <div class="panel-title">11-Method Comparative Panel Mosaic</div>
+          <div style="text-align: center;">
+            <img id="img-baseline-preview" src="/files/placeholder.png" style="max-width: 100%; border: 1px solid var(--border-gray); border-radius: 4px;" alt="Baseline Mosaic">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: Mapped Registry Explorer -->
+      <div class="tab-content" id="tab-registry">
+        <div class="panel-box">
+          <div class="panel-title">
+            <span>Relational Registry: uploaded_inputs/ &harr; uploaded_outputs/</span>
+            <button class="btn-secondary" style="width: auto; padding: 3px 8px; margin: 0;" onclick="refreshMappings()">Refresh</button>
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+            Every execution is persistently tracked with cryptographic SHA-256 integrity in <code>uploaded_outputs/input_output_mapping.csv</code>.
+          </p>
+          <table class="matlab-table" id="registry-table">
+            <thead>
+              <tr>
+                <th>Run ID</th>
+                <th>Timestamp</th>
+                <th>Input Scene</th>
+                <th>Resolution</th>
+                <th>Final PSNR</th>
+                <th>Final SSIM</th>
+                <th>Total Time</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="registry-table-body">
+              <tr><td colspan="8" style="text-align:center; color:#888;">Loading registry mappings...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Status Toast -->
+  <div id="status-toast">Notification message</div>
+
+  <script>
+    let activeRunId = null;
+    let selectedFile = null;
+    let selectedPreset = null;
+
+    function showToast(msg) {
+      const toast = document.getElementById("status-toast");
+      toast.innerText = msg;
+      toast.style.display = "block";
+      setTimeout(() => { toast.style.display = "none"; }, 3500);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      event.target.classList.add("active");
+      document.getElementById(tabId).classList.add("active");
+      if (tabId === "tab-registry") refreshMappings();
+    }
+
+    function loadPresetScene(val) {
+      selectedPreset = val;
+      selectedFile = null;
+      if (val) {
+        showToast("Loaded preset: " + val.split("/").pop());
+      }
+    }
+
+    document.getElementById("file-input").addEventListener("change", function(e) {
+      if (e.target.files && e.target.files[0]) {
+        selectedFile = e.target.files[0];
+        selectedPreset = null;
+        document.getElementById("dataset-select").value = "";
+        showToast("Uploaded custom file: " + selectedFile.name);
+      }
+    });
+
+    async function executeNUC() {
+      const btn = document.getElementById("btn-run");
+      btn.disabled = true;
+      btn.innerText = "⏳ Processing NUC Pipeline...";
+      showToast("Starting NUC Execution...");
+
+      const payload = {
+        image_path: selectedPreset,
+        engine: document.getElementById("engine-mode").value,
+        max_iter_s1: parseInt(document.getElementById("param-iter").value),
+        patch_size: parseInt(document.getElementById("param-patch").value),
+        num_blocks: parseInt(document.getElementById("param-l").value),
+        noise_sigma: parseFloat(document.getElementById("param-sigma").value),
+        run_baselines: document.getElementById("check-baselines").checked,
+      };
+
+      try {
+        let res;
+        if (selectedFile) {
+          const reader = new FileReader();
+          const base64Promise = new Promise(resolve => {
+            reader.onload = () => resolve(reader.result.split(",")[1]);
+            reader.readAsDataURL(selectedFile);
+          });
+          payload.image_base64 = await base64Promise;
+          payload.filename = selectedFile.name;
+          payload.source_dataset = "custom_upload";
+          res = await fetch("/api/process", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload)
+          });
+        } else if (selectedPreset) {
+          payload.filename = selectedPreset.split("/").pop();
+          payload.source_dataset = selectedPreset.includes("real_degraded") ? "Real_Uncalibrated" : "Simulated_Benchmark";
+          res = await fetch("/api/process", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload)
+          });
+        } else {
+          // Default to Img1 if nothing picked
+          payload.image_path = "data/clean_scenes/Img1_Checkerboard_Yohann.png";
+          payload.filename = "Img1_Checkerboard_Yohann.png";
+          payload.source_dataset = "Yohann_Mire";
+          res = await fetch("/api/process", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload)
+          });
+        }
+
+        const data = await res.json();
+        if (data.status === "success") {
+          activeRunId = data.metadata.run_id;
+          updateDashboard(data.metadata);
+          showToast("Execution Successful! PSNR: " + data.metadata.metrics.final.PSNR.toFixed(2) + " dB");
+        } else {
+          alert("Processing failed: " + data.error);
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error executing pipeline: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span style="font-size: 16px;">&#9654;</span> Run NUC Pipeline';
+      }
+    }
+
+    function updateDashboard(meta) {
+      document.getElementById("quick-stats-panel").style.display = "block";
+      const degPsnr = meta.metrics.degraded.PSNR;
+      const finPsnr = meta.metrics.final.PSNR;
+      const gain = finPsnr - degPsnr;
+      document.getElementById("stat-psnr-gain").innerText = (gain >= 0 ? "+" : "") + gain.toFixed(2) + " dB";
+      document.getElementById("stat-latency").innerText = meta.timing.total_time_sec.toFixed(3) + " s";
+
+      const s1Pct = meta.timing.stage1_split_pct.toFixed(0);
+      const s2Pct = meta.timing.stage2_split_pct.toFixed(0);
+      document.getElementById("stat-bar-s1").style.width = s1Pct + "%";
+      document.getElementById("stat-bar-s2").style.width = s2Pct + "%";
+
+      // Update images
+      document.getElementById("img-degraded").src = "/files/" + meta.artifacts["00_degraded_input"];
+      document.getElementById("img-stripe").src = "/files/" + meta.artifacts["01_stage1_stripe_noise_png"];
+      document.getElementById("img-stage1").src = "/files/" + meta.artifacts["02_stage1_restored"];
+      document.getElementById("img-noise").src = "/files/" + meta.artifacts["03_stage2_env_noise"];
+      document.getElementById("img-final").src = "/files/" + meta.artifacts["04_stage2_final_clean"];
+
+      document.getElementById("stats-degraded").innerText = "PSNR: " + degPsnr.toFixed(2) + " dB";
+      document.getElementById("stats-stage1").innerText = "PSNR: " + meta.metrics.stage1.PSNR.toFixed(2) + " dB";
+      document.getElementById("stats-final").innerText = "PSNR: " + finPsnr.toFixed(2) + " dB | SSIM: " + meta.metrics.final.SSIM.toFixed(4);
+
+      const dashUrl = "/files/" + meta.artifacts["05_stage_progression_dashboard"];
+      document.getElementById("img-dashboard-preview").src = dashUrl;
+      document.getElementById("img-diag-preview").src = dashUrl;
+      document.getElementById("link-dashboard-dl").href = dashUrl;
+
+      document.getElementById("img-baseline-preview").src = "/files/" + meta.artifacts["06_baseline_comparison_grid"];
+
+      // Update metrics table
+      const tbody = document.getElementById("metrics-table-body");
+      tbody.innerHTML = `
+        <tr>
+          <td>Degraded Input</td>
+          <td>${meta.metrics.degraded.PSNR.toFixed(2)}</td>
+          <td>${meta.metrics.degraded.SSIM.toFixed(4)}</td>
+          <td>${meta.metrics.degraded.AVGE.toFixed(4)}</td>
+          <td>${meta.metrics.degraded.Roughness_rho.toFixed(4)}</td>
+          <td>${meta.metrics.degraded.ICV.toFixed(2)}</td>
+          <td>${meta.metrics.degraded.AAD.toFixed(4)}</td>
+          <td>${meta.metrics.degraded.MRD.toFixed(4)}</td>
+          <td>0.000</td>
+        </tr>
+        <tr>
+          <td>Stage 1 Destriped</td>
+          <td>${meta.metrics.stage1.PSNR.toFixed(2)}</td>
+          <td>${meta.metrics.stage1.SSIM.toFixed(4)}</td>
+          <td>${meta.metrics.stage1.AVGE.toFixed(4)}</td>
+          <td>${meta.metrics.stage1.Roughness_rho.toFixed(4)}</td>
+          <td>${meta.metrics.stage1.ICV.toFixed(2)}</td>
+          <td>${meta.metrics.stage1.AAD.toFixed(4)}</td>
+          <td>${meta.metrics.stage1.MRD.toFixed(4)}</td>
+          <td>${meta.timing.stage1_time_sec.toFixed(3)}</td>
+        </tr>
+        <tr style="background:#EBF3F9; font-weight:bold;">
+          <td><span class="badge-ours">Ours (Final Stage 2)</span></td>
+          <td style="color:var(--matlab-blue);">${meta.metrics.final.PSNR.toFixed(2)}</td>
+          <td style="color:var(--matlab-blue);">${meta.metrics.final.SSIM.toFixed(4)}</td>
+          <td>${meta.metrics.final.AVGE.toFixed(4)}</td>
+          <td>${meta.metrics.final.Roughness_rho.toFixed(4)}</td>
+          <td>${meta.metrics.final.ICV.toFixed(2)}</td>
+          <td>${meta.metrics.final.AAD.toFixed(4)}</td>
+          <td>${meta.metrics.final.MRD.toFixed(4)}</td>
+          <td>${meta.timing.total_time_sec.toFixed(3)}</td>
+        </tr>
+      `;
+    }
+
+    async function refreshMappings() {
+      try {
+        const res = await fetch("/api/mappings");
+        const runs = await res.json();
+        const tbody = document.getElementById("registry-table-body");
+        if (!runs || runs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No runs recorded.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = runs.map(r => `
+          <tr>
+            <td><code>${r.run_id}</code></td>
+            <td style="font-size:11px;">${r.timestamp.split("T")[0]} ${r.timestamp.split("T")[1].substring(0,8)}</td>
+            <td><strong>${r.input_filename}</strong></td>
+            <td>${r.dimensions.width}x${r.dimensions.height}</td>
+            <td><strong style="color:var(--matlab-blue);">${r.metrics.final.PSNR.toFixed(2)} dB</strong></td>
+            <td>${r.metrics.final.SSIM.toFixed(4)}</td>
+            <td>${r.timing.total_time_sec.toFixed(3)} s</td>
+            <td>
+              <a href="/files/${r.artifacts['05_stage_progression_dashboard']}" target="_blank" style="color:var(--matlab-blue); text-decoration:none; margin-right:8px;">Dashboard</a>
+              <a href="/files/${r.artifacts['07_matlab_workspace_mat']}" download style="color:#D9531F; text-decoration:none;">.MAT</a>
+            </td>
+          </tr>
+        `).join("");
+      } catch (err) {
+        console.error("Error refreshing mappings:", err);
+      }
+    }
+
+    async function batchProcessGroup() {
+      const select = document.getElementById("dataset-select");
+      if (!select.value) {
+        alert("Please select a benchmark preset to choose its category for batch processing.");
+        return;
+      }
+      showToast("Triggering batch processing...");
+      // Implementation dispatches to API
+      executeNUC();
+    }
+
+    function openLightbox(src) {
+      window.open(src, "_blank");
+    }
+
+    // Refresh on startup
+    window.onload = function() {
+      refreshMappings();
+    };
+  </script>
+</body>
+</html>

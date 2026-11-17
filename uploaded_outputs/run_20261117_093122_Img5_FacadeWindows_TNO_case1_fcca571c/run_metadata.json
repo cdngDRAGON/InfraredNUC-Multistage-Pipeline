@@ -1,0 +1,87 @@
+{
+  "run_id": "run_20261117_093122_Img5_FacadeWindows_TNO_case1_fcca571c",
+  "timestamp": "2026-11-17T09:31:25.964998",
+  "input_filename": "Img5_FacadeWindows_TNO_case1.png",
+  "input_sha256": "446c9a568e61eac163542c60ec2433edfe86d00ccc8ec1fc9b64217a569a6ad0",
+  "source_dataset": "TNO_Thermal",
+  "dimensions": {
+    "height": 256,
+    "width": 256
+  },
+  "parameters": {
+    "engine": "proposed_ours",
+    "fast_mode": true
+  },
+  "timing": {
+    "stage1_time_sec": 0.41715145797934383,
+    "stage2_time_sec": 0.45888241700595245,
+    "total_time_sec": 0.8760340409935452,
+    "stage1_split_pct": 47.61817902712542,
+    "stage2_split_pct": 52.381802022783475
+  },
+  "metrics": {
+    "degraded": {
+      "PSNR": 26.056086662664843,
+      "SSIM": 0.4730611990435893,
+      "AVGE": 0.0,
+      "Roughness_rho": 0.8103413879773638,
+      "ICV": 8.315357852920265,
+      "AAD": 0.0,
+      "MRD": 0.0,
+      "Degraded_PSNR": 26.056086662664843,
+      "Degraded_SSIM": 0.4730611990435893,
+      "Degraded_Roughness_rho": 0.8103413879773638,
+      "Degraded_ICV": 8.315357852920265,
+      "PSNR_gt": 26.056086662664843,
+      "SSIM_gt": 0.4730611990435893,
+      "AAD_gt": 10.01507568359375,
+      "MRD_gt": 0.09952886954548368
+    },
+    "stage1": {
+      "PSNR": 33.611154108743804,
+      "SSIM": 0.8743331455915488,
+      "AVGE": 3.631613710357105,
+      "Roughness_rho": 0.3903497536312231,
+      "ICV": 19.059005352539515,
+      "AAD": 8.9319845230656,
+      "MRD": 0.09112106879993986,
+      "Degraded_PSNR": 26.056086662664843,
+      "Degraded_SSIM": 0.4730611990435893,
+      "Degraded_Roughness_rho": 0.8103413879773638,
+      "Degraded_ICV": 8.315357852920265,
+      "PSNR_gt": 33.611154108743804,
+      "SSIM_gt": 0.8743331455915488,
+      "AAD_gt": 4.15734178775494,
+      "MRD_gt": 0.04099331009279791
+    },
+    "final": {
+      "PSNR": 33.873920967361386,
+      "SSIM": 0.8814227982432593,
+      "AVGE": 4.855667991160048,
+      "Roughness_rho": 0.34713342958215676,
+      "ICV": 22.596541400445403,
+      "AAD": 9.235930333392695,
+      "MRD": 0.09431962393215684,
+      "Degraded_PSNR": 26.056086662664843,
+      "Degraded_SSIM": 0.4730611990435893,
+      "Degraded_Roughness_rho": 0.8103413879773638,
+      "Degraded_ICV": 8.315357852920265,
+      "PSNR_gt": 33.873920967361386,
+      "SSIM_gt": 0.8814227982432593,
+      "AAD_gt": 4.024213695913521,
+      "MRD_gt": 0.039621568389017814
+    }
+  },
+  "artifacts": {
+    "00_degraded_input": "uploaded_outputs/run_20261117_093122_Img5_FacadeWindows_TNO_case1_fcca571c/00_degraded_input.png",
+    "01_stage1_stripe_noise_png": "uploaded_outputs/run_20261117_093122_Img5_FacadeWindows_TNO_case1_fcca571c/01_stage1_stripe_noise.png",
+    "01_stage1_stripe_noise_mat": "uploaded_outputs/run_20261117_093122_Img5_FacadeWindows_TNO_case1_fcca571c/01_stage1_stripe_noise.mat",
+    "02_stage1_restored": "uploaded_outputs/run_20261117_093122_Img5_FacadeWindows_TNO_case1_fcca571c/02_stage1_restored.png",
+    "03_stage2_env_noise": "uploaded_outputs/run_20261117_093122_Img5_FacadeWindows_TNO_case1_fcca571c/03_stage2_env_noise.png",
+    "04_stage2_final_clean": "uploaded_outputs/run_20261117_093122_Img5_FacadeWindows_TNO_case1_fcca571c/04_stage2_final_clean.png",
+    "05_stage_progression_dashboard": "uploaded_outputs/run_20261117_093122_Img5_FacadeWindows_TNO_case1_fcca571c/05_stage_progression_dashboard.png",
+    "06_baseline_comparison_grid": "uploaded_outputs/run_20261117_093122_Img5_FacadeWindows_TNO_case1_fcca571c/06_baseline_comparison_grid.png",
+    "07_matlab_workspace_mat": "uploaded_outputs/run_20261117_093122_Img5_FacadeWindows_TNO_case1_fcca571c/07_matlab_workspace.mat",
+    "stage_metrics_report_csv": "uploaded_outputs/run_20261117_093122_Img5_FacadeWindows_TNO_case1_fcca571c/stage_metrics_report.csv"
+  }
+}

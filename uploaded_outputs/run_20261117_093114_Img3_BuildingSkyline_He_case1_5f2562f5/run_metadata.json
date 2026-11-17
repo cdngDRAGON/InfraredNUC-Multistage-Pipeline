@@ -1,0 +1,87 @@
+{
+  "run_id": "run_20261117_093114_Img3_BuildingSkyline_He_case1_5f2562f5",
+  "timestamp": "2026-11-17T09:31:18.401664",
+  "input_filename": "Img3_BuildingSkyline_He_case1.png",
+  "input_sha256": "d3b6d3ceb98e46352a53177408a2ca9f0409b397dd896ee84050f7f297eaa245",
+  "source_dataset": "DLS_NUC",
+  "dimensions": {
+    "height": 256,
+    "width": 256
+  },
+  "parameters": {
+    "engine": "proposed_ours",
+    "fast_mode": true
+  },
+  "timing": {
+    "stage1_time_sec": 0.41764287499245256,
+    "stage2_time_sec": 0.45935670801554807,
+    "total_time_sec": 0.8770001670054626,
+    "stage1_split_pct": 47.62175546876207,
+    "stage2_split_pct": 52.37817794077605
+  },
+  "metrics": {
+    "degraded": {
+      "PSNR": 26.096077611872065,
+      "SSIM": 0.46486630717614436,
+      "AVGE": 0.0,
+      "Roughness_rho": 1.2968543183132433,
+      "ICV": 6.465407876180824,
+      "AAD": 0.0,
+      "MRD": 0.0,
+      "Degraded_PSNR": 26.096077611872065,
+      "Degraded_SSIM": 0.46486630717614436,
+      "Degraded_Roughness_rho": 1.2968543183132433,
+      "Degraded_ICV": 6.465407876180824,
+      "PSNR_gt": 26.096077611872065,
+      "SSIM_gt": 0.46486630717614436,
+      "AAD_gt": 9.950363159179688,
+      "MRD_gt": 0.2555100307132043
+    },
+    "stage1": {
+      "PSNR": 33.70735971288882,
+      "SSIM": 0.8682097867726318,
+      "AVGE": 3.6935266600530454,
+      "Roughness_rho": 0.6346683192750608,
+      "ICV": 18.750909025773108,
+      "AAD": 8.968839323753159,
+      "MRD": 0.31366588104244597,
+      "Degraded_PSNR": 26.096077611872065,
+      "Degraded_SSIM": 0.46486630717614436,
+      "Degraded_Roughness_rho": 1.2968543183132433,
+      "Degraded_ICV": 6.465407876180824,
+      "PSNR_gt": 33.70735971288882,
+      "SSIM_gt": 0.8682097867726318,
+      "AAD_gt": 4.132221641596877,
+      "MRD_gt": 0.14001556083811625
+    },
+    "final": {
+      "PSNR": 34.13396825542541,
+      "SSIM": 0.8892036512047053,
+      "AVGE": 4.731677827375122,
+      "Roughness_rho": 0.5841604057192946,
+      "ICV": 22.21630319488277,
+      "AAD": 9.222640717173597,
+      "MRD": 0.3225582595310279,
+      "Degraded_PSNR": 26.096077611872065,
+      "Degraded_SSIM": 0.46486630717614436,
+      "Degraded_Roughness_rho": 1.2968543183132433,
+      "Degraded_ICV": 6.465407876180824,
+      "PSNR_gt": 34.13396825542541,
+      "SSIM_gt": 0.8892036512047053,
+      "AAD_gt": 3.923899487910541,
+      "MRD_gt": 0.13582990731967598
+    }
+  },
+  "artifacts": {
+    "00_degraded_input": "uploaded_outputs/run_20261117_093114_Img3_BuildingSkyline_He_case1_5f2562f5/00_degraded_input.png",
+    "01_stage1_stripe_noise_png": "uploaded_outputs/run_20261117_093114_Img3_BuildingSkyline_He_case1_5f2562f5/01_stage1_stripe_noise.png",
+    "01_stage1_stripe_noise_mat": "uploaded_outputs/run_20261117_093114_Img3_BuildingSkyline_He_case1_5f2562f5/01_stage1_stripe_noise.mat",
+    "02_stage1_restored": "uploaded_outputs/run_20261117_093114_Img3_BuildingSkyline_He_case1_5f2562f5/02_stage1_restored.png",
+    "03_stage2_env_noise": "uploaded_outputs/run_20261117_093114_Img3_BuildingSkyline_He_case1_5f2562f5/03_stage2_env_noise.png",
+    "04_stage2_final_clean": "uploaded_outputs/run_20261117_093114_Img3_BuildingSkyline_He_case1_5f2562f5/04_stage2_final_clean.png",
+    "05_stage_progression_dashboard": "uploaded_outputs/run_20261117_093114_Img3_BuildingSkyline_He_case1_5f2562f5/05_stage_progression_dashboard.png",
+    "06_baseline_comparison_grid": "uploaded_outputs/run_20261117_093114_Img3_BuildingSkyline_He_case1_5f2562f5/06_baseline_comparison_grid.png",
+    "07_matlab_workspace_mat": "uploaded_outputs/run_20261117_093114_Img3_BuildingSkyline_He_case1_5f2562f5/07_matlab_workspace.mat",
+    "stage_metrics_report_csv": "uploaded_outputs/run_20261117_093114_Img3_BuildingSkyline_He_case1_5f2562f5/stage_metrics_report.csv"
+  }
+}

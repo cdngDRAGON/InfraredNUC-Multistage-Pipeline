@@ -1,0 +1,87 @@
+{
+  "run_id": "run_20261117_093125_Img6_StreetCars_LLVIP_case1_249c7e3a",
+  "timestamp": "2026-11-17T09:31:29.752716",
+  "input_filename": "Img6_StreetCars_LLVIP_case1.png",
+  "input_sha256": "f615a98d3fa07b97b18dd9b9b9e7ca6fe58a0a5c441106f9056150738d0fb70e",
+  "source_dataset": "LLVIP_Thermal",
+  "dimensions": {
+    "height": 256,
+    "width": 256
+  },
+  "parameters": {
+    "engine": "proposed_ours",
+    "fast_mode": true
+  },
+  "timing": {
+    "stage1_time_sec": 0.41582233301596716,
+    "stage2_time_sec": 0.4404882089875173,
+    "total_time_sec": 0.8563107080117334,
+    "stage1_split_pct": 48.55974929718897,
+    "stage2_split_pct": 51.44023131624406
+  },
+  "metrics": {
+    "degraded": {
+      "PSNR": 26.681580884593842,
+      "SSIM": 0.4481936675989053,
+      "AVGE": 0.0,
+      "Roughness_rho": 3.3746964779972144,
+      "ICV": 1.1964580996709178,
+      "AAD": 0.0,
+      "MRD": 0.0,
+      "Degraded_PSNR": 26.681580884593842,
+      "Degraded_SSIM": 0.4481936675989053,
+      "Degraded_Roughness_rho": 3.3746964779972144,
+      "Degraded_ICV": 1.1964580996709178,
+      "PSNR_gt": 26.681580884593842,
+      "SSIM_gt": 0.4481936675989053,
+      "AAD_gt": 9.281585693359375,
+      "MRD_gt": 0.8355039665876487
+    },
+    "stage1": {
+      "PSNR": 33.815382614793556,
+      "SSIM": 0.8369513922271203,
+      "AVGE": 3.4192101821188987,
+      "Roughness_rho": 1.6153057625495078,
+      "ICV": 4.55404745542189,
+      "AAD": 8.36811682674995,
+      "MRD": 2.007204718715678,
+      "Degraded_PSNR": 26.681580884593842,
+      "Degraded_SSIM": 0.4481936675989053,
+      "Degraded_Roughness_rho": 3.3746964779972144,
+      "Degraded_ICV": 1.1964580996709178,
+      "PSNR_gt": 33.815382614793556,
+      "SSIM_gt": 0.8369513922271203,
+      "AAD_gt": 4.063107579750538,
+      "MRD_gt": 0.5197622960921959
+    },
+    "final": {
+      "PSNR": 34.161436030137395,
+      "SSIM": 0.8586867555596907,
+      "AVGE": 4.395373948851359,
+      "Roughness_rho": 1.4599794913657154,
+      "ICV": 5.546514362875652,
+      "AAD": 8.635542472272508,
+      "MRD": 2.0737150279866006,
+      "Degraded_PSNR": 26.681580884593842,
+      "Degraded_SSIM": 0.4481936675989053,
+      "Degraded_Roughness_rho": 3.3746964779972144,
+      "Degraded_ICV": 1.1964580996709178,
+      "PSNR_gt": 34.161436030137395,
+      "SSIM_gt": 0.8586867555596907,
+      "AAD_gt": 3.8828036197052773,
+      "MRD_gt": 0.5070415755666896
+    }
+  },
+  "artifacts": {
+    "00_degraded_input": "uploaded_outputs/run_20261117_093125_Img6_StreetCars_LLVIP_case1_249c7e3a/00_degraded_input.png",
+    "01_stage1_stripe_noise_png": "uploaded_outputs/run_20261117_093125_Img6_StreetCars_LLVIP_case1_249c7e3a/01_stage1_stripe_noise.png",
+    "01_stage1_stripe_noise_mat": "uploaded_outputs/run_20261117_093125_Img6_StreetCars_LLVIP_case1_249c7e3a/01_stage1_stripe_noise.mat",
+    "02_stage1_restored": "uploaded_outputs/run_20261117_093125_Img6_StreetCars_LLVIP_case1_249c7e3a/02_stage1_restored.png",
+    "03_stage2_env_noise": "uploaded_outputs/run_20261117_093125_Img6_StreetCars_LLVIP_case1_249c7e3a/03_stage2_env_noise.png",
+    "04_stage2_final_clean": "uploaded_outputs/run_20261117_093125_Img6_StreetCars_LLVIP_case1_249c7e3a/04_stage2_final_clean.png",
+    "05_stage_progression_dashboard": "uploaded_outputs/run_20261117_093125_Img6_StreetCars_LLVIP_case1_249c7e3a/05_stage_progression_dashboard.png",
+    "06_baseline_comparison_grid": "uploaded_outputs/run_20261117_093125_Img6_StreetCars_LLVIP_case1_249c7e3a/06_baseline_comparison_grid.png",
+    "07_matlab_workspace_mat": "uploaded_outputs/run_20261117_093125_Img6_StreetCars_LLVIP_case1_249c7e3a/07_matlab_workspace.mat",
+    "stage_metrics_report_csv": "uploaded_outputs/run_20261117_093125_Img6_StreetCars_LLVIP_case1_249c7e3a/stage_metrics_report.csv"
+  }
+}

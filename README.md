@@ -3,7 +3,7 @@
 [![IEEE Sensors Journal](https://img.shields.io/badge/IEEE%20Sensors%20Journal-Vol.%2026%2C%20No.%204%20(Feb%202026)-00629B.svg)](https://ieeexplore.ieee.org/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![Audit Status](https://img.shields.io/badge/QA%20Audit-100%25%20PASS-brightgreen.svg)](AUDIT_REPORT.md)
-[![Tests Passing](https://img.shields.io/badge/tests-50%2F50%20passing-brightgreen.svg)]()
+[![Tests Passing](https://img.shields.io/badge/tests-58%2F58%20passing-brightgreen.svg)]()
 [![Code Style: IEEE Publication](https://img.shields.io/badge/style-IEEE%20Light%20Theme%20(300%20DPI)-black.svg)]()
 [![License: Academic / Open](https://img.shields.io/badge/license-Academic%20Research-lightgrey.svg)]()
 
@@ -118,9 +118,24 @@ ir-nuc-multistage-pipeline/
 │   ├── results/                         # [Results](mod06_runtime_and_parfor_scaling/results/) (Table II, Fig. 23 stage breakdown)
 │   └── src/                             # runtime_profiler.py, stage_breakdown.py
 │
+├── web_workbench/                       # MATLAB R2024a App Designer-Themed Web Workbench
+│   ├── server.py                        # REST API & Multi-threaded HTTP Server
+│   └── templates/index.html             # Single-Page Interactive Web Application
+│
+├── matlab_app/                          # Native MATLAB Desktop App (R2020b–R2024b)
+│   ├── InfraredNUC_WebWorkbench.m       # Native uifigure Desktop Application
+│   └── README_MATLAB.md                 # MATLAB Launch and User Guide
+│
+├── uploaded_inputs/                     # User/Benchmark Ingestion Store (SHA-256 tracked)
+│
+├── uploaded_outputs/                    # Automated Relational Output Artifacts (<run_id>/)
+│   ├── input_output_mapping.csv         # Master Relational CSV Database
+│   ├── input_output_mapping.json        # Structured JSON Mapping Registry
+│   └── <run_id>/                        # 8 Stage Artifacts (.png, .mat), Dashboard, Report
+│
 ├── reports/                             # Publication manuscripts, BibTeX, and synchronized tables
 │   └── ieee_sensors_nuc/
-│       ├── IEEE_Sensors_InfraredNUC_Report.pdf  # Main paper (7 pages, 12 MB)
+│       ├── IEEE_Sensors_InfraredNUC_Report.pdf  # Main paper (8 pages, 821 KB, gs-compressed)
 │       ├── InfraredNUC_Viva_Compendium.pdf      # Viva guide (4 pages, 225 KB)
 │       ├── main_ieee_sensors.tex                # Primary LaTeX source
 │       ├── viva_compendium.tex                  # Viva Voce LaTeX source
@@ -131,9 +146,38 @@ ir-nuc-multistage-pipeline/
 ├── scripts/                             # Automation, auditing & interactive TUI hub
 │   ├── audit_workspace.py               # Pixel-level, DPI, and CSV consistency validator
 │   └── interactive_hub.py               # Master CLI interactive testing suite
-├── Makefile                             # Orchestration build harness
+├── Makefile                             # Orchestration build harness (make web, make all)
 ├── requirements.txt                     # Pinned scientific Python stack
 └── AUDIT_REPORT.md                      # Audit certification log (100% PASS)
+```
+
+---
+
+## 🖥️ MATLAB-Style Web Workbench & Automated File Mapping
+
+The repository features an enterprise-grade **MATLAB R2024a App Designer-themed Web Workbench** (`web_workbench/`) and a **Native MATLAB Desktop App** (`matlab_app/`):
+
+### Key Capabilities:
+- **Interactive Ingestion & Processing**: Drag-and-drop custom infrared images or choose from 47 real IR benchmark scenes.
+- **Relational Artifact Storage (`uploaded_inputs/` &harr; `uploaded_outputs/`)**:
+  Every processed image automatically creates a unique `<run_id>` directory containing:
+  1. `00_degraded_input.png`: Raw degraded input
+  2. `01_stage1_stripe_noise.png` & `01_stage1_stripe_noise.mat`: Separated stripe noise $S(x, y)$
+  3. `02_stage1_restored.png`: Destriped intermediate $C_1(x, y)$
+  4. `03_stage2_env_noise.png`: Separated environmental thermal noise $N(x, y)$
+  5. `04_stage2_final_clean.png`: Final clean thermal image $C_2(x, y)$
+  6. `05_stage_progression_dashboard.png`: 300-DPI MATLAB-style multi-panel with 2D zoomed insets, 3D energy surface, and X/Y gradient profiles
+  7. `06_baseline_comparison_grid.png`: Comparative mosaic against 10 baseline methods
+  8. `07_matlab_workspace.mat`: Full MATLAB workspace (`D`, `C1`, `C2`, `S`, `N`, `metrics`, `runtime`)
+  9. `stage_metrics_report.csv` & `run_metadata.json`: Numerical tables and SHA-256 metadata.
+- **Persistent Relational Database**: Automatically appended to `uploaded_outputs/input_output_mapping.csv` and `input_output_mapping.json`.
+
+```bash
+# Launch the Web Workbench on http://127.0.0.1:8080
+make web
+
+# Or pre-seed 6 canonical benchmark runs into uploaded_inputs/ & uploaded_outputs/
+make seed_uploads
 ```
 
 ---
@@ -145,11 +189,11 @@ Across all 6 canonical infrared scenarios (`Img1` through `Img6`), the proposed 
 
 | Metric | Degraded | 1D-GF | 1D-WLS | BM3D | ADOM | LRSID | GSRSR | SNRCNN | DLS-NUC | CycleGAN | **Ours** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **PSNR (dB)** $\uparrow$ | $19.46$ | $23.18$ | $24.71$ | $26.85$ | $28.34$ | $28.91$ | $29.47$ | $29.80$ | $30.12$ | $30.85$ | $\mathbf{32.14}$ |
-| **SSIM** $\uparrow$ | $0.512$ | $0.684$ | $0.729$ | $0.791$ | $0.835$ | $0.849$ | $0.867$ | $0.873$ | $0.885$ | $0.898$ | $\mathbf{0.932}$ |
-| **AVGE** $\downarrow$ | $14.82$ | $8.41$ | $7.15$ | $5.32$ | $4.18$ | $3.72$ | $3.29$ | $3.11$ | $2.95$ | $2.61$ | $\mathbf{1.84}$ |
-| **$\rho$ (Roughness)** $\downarrow$ | $0.184$ | $0.112$ | $0.098$ | $0.076$ | $0.059$ | $0.054$ | $0.048$ | $0.045$ | $0.041$ | $0.038$ | $\mathbf{0.026}$ |
-| **ICV** $\uparrow$ | $12.4$ | $18.9$ | $21.4$ | $25.8$ | $31.2$ | $33.5$ | $36.8$ | $38.2$ | $40.5$ | $42.1$ | $\mathbf{48.7}$ |
+| **PSNR (dB)** $\uparrow$ | $26.25$ | $31.18$ | $30.44$ | $27.12$ | $30.68$ | $30.59$ | $29.19$ | $30.54$ | $30.85$ | $30.48$ | $\mathbf{33.05}$ |
+| **SSIM** $\uparrow$ | $0.538$ | $0.791$ | $0.772$ | $0.548$ | $0.773$ | $0.781$ | $0.693$ | $0.761$ | $0.774$ | $0.756$ | $\mathbf{0.870}$ |
+| **AVGE** $\downarrow$ | $5.48$ | $5.46$ | $5.48$ | $3.46$ | $4.97$ | $5.45$ | $5.47$ | $5.69$ | $5.47$ | $5.68$ | $\mathbf{3.16}$ |
+| **$\rho$ (Roughness)** $\downarrow$ | $1.458$ | $0.863$ | $0.886$ | $1.106$ | $0.897$ | $0.945$ | $1.126$ | $0.934$ | $0.925$ | $0.943$ | $\mathbf{0.722}$ |
+| **ICV** $\uparrow$ | $5.32$ | $9.54$ | $9.39$ | $7.68$ | $9.47$ | $9.14$ | $7.34$ | $8.78$ | $8.73$ | $8.62$ | $\mathbf{15.01}$ |
 
 ### 2. Computational Runtime & Multi-Core Scaling (Table II)
 Stage 1 and Stage 2 are decoupled, enabling massive parallelism via multi-core patch grouping (`Parfor` equivalent):

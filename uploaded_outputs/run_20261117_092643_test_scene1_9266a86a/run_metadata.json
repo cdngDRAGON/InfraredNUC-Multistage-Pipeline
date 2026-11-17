@@ -1,0 +1,84 @@
+{
+  "run_id": "run_20261117_092643_test_scene1_9266a86a",
+  "timestamp": "2026-11-17T09:26:45.499159",
+  "input_filename": "test_scene1.png",
+  "input_sha256": "1f90882b116b67880d811c82c2685dea7bbb5d007aa977dad925e2bb6aa30a81",
+  "source_dataset": "Yohann_Mire",
+  "dimensions": {
+    "height": 256,
+    "width": 256
+  },
+  "parameters": {},
+  "timing": {
+    "stage1_time_sec": 0.13377729200874455,
+    "stage2_time_sec": 1.3110397919954266,
+    "total_time_sec": 1.4456597919925116,
+    "stage1_split_pct": 9.253718803666152,
+    "stage2_split_pct": 90.68798892079242
+  },
+  "metrics": {
+    "degraded": {
+      "PSNR": 26.062350576101853,
+      "SSIM": 0.7003665010185632,
+      "AVGE": 0.0,
+      "Roughness_rho": 1.0770852714928576,
+      "ICV": 10.446920431554396,
+      "AAD": 0.0,
+      "MRD": 0.0,
+      "Degraded_PSNR": 26.062350576101853,
+      "Degraded_SSIM": 0.7003665010185632,
+      "Degraded_Roughness_rho": 1.0770852714928576,
+      "Degraded_ICV": 10.446920431554396,
+      "PSNR_gt": 26.062350576101853,
+      "SSIM_gt": 0.7003665010185632,
+      "AAD_gt": 10.026580810546875,
+      "MRD_gt": 0.10914581213963048
+    },
+    "stage1": {
+      "PSNR": 24.813168118728775,
+      "SSIM": 0.7673097558122042,
+      "AVGE": 5.573747724532633,
+      "Roughness_rho": 0.4836837459935795,
+      "ICV": 36.024751344758876,
+      "AAD": 12.917181372608605,
+      "MRD": 0.3087592792300609,
+      "Degraded_PSNR": 26.062350576101853,
+      "Degraded_SSIM": 0.7003665010185632,
+      "Degraded_Roughness_rho": 1.0770852714928576,
+      "Degraded_ICV": 10.446920431554396,
+      "PSNR_gt": 24.813168118728775,
+      "SSIM_gt": 0.7673097558122042,
+      "AAD_gt": 8.951450784551902,
+      "MRD_gt": 0.11537159394294624
+    },
+    "final": {
+      "PSNR": 24.81175223224186,
+      "SSIM": 0.7683451293520438,
+      "AVGE": 6.016571336516923,
+      "Roughness_rho": 0.479771076199368,
+      "ICV": 37.888781411870895,
+      "AAD": 13.039432756369571,
+      "MRD": 0.3107196879306119,
+      "Degraded_PSNR": 26.062350576101853,
+      "Degraded_SSIM": 0.7003665010185632,
+      "Degraded_Roughness_rho": 1.0770852714928576,
+      "Degraded_ICV": 10.446920431554396,
+      "PSNR_gt": 24.81175223224186,
+      "SSIM_gt": 0.7683451293520438,
+      "AAD_gt": 8.931134295040554,
+      "MRD_gt": 0.11520441583969819
+    }
+  },
+  "artifacts": {
+    "00_degraded_input": "uploaded_outputs/run_20261117_092643_test_scene1_9266a86a/00_degraded_input.png",
+    "01_stage1_stripe_noise_png": "uploaded_outputs/run_20261117_092643_test_scene1_9266a86a/01_stage1_stripe_noise.png",
+    "01_stage1_stripe_noise_mat": "uploaded_outputs/run_20261117_092643_test_scene1_9266a86a/01_stage1_stripe_noise.mat",
+    "02_stage1_restored": "uploaded_outputs/run_20261117_092643_test_scene1_9266a86a/02_stage1_restored.png",
+    "03_stage2_env_noise": "uploaded_outputs/run_20261117_092643_test_scene1_9266a86a/03_stage2_env_noise.png",
+    "04_stage2_final_clean": "uploaded_outputs/run_20261117_092643_test_scene1_9266a86a/04_stage2_final_clean.png",
+    "05_stage_progression_dashboard": "uploaded_outputs/run_20261117_092643_test_scene1_9266a86a/05_stage_progression_dashboard.png",
+    "06_baseline_comparison_grid": "uploaded_outputs/run_20261117_092643_test_scene1_9266a86a/06_baseline_comparison_grid.png",
+    "07_matlab_workspace_mat": "uploaded_outputs/run_20261117_092643_test_scene1_9266a86a/07_matlab_workspace.mat",
+    "stage_metrics_report_csv": "uploaded_outputs/run_20261117_092643_test_scene1_9266a86a/stage_metrics_report.csv"
+  }
+}

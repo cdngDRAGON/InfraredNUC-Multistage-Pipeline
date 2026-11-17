@@ -13,7 +13,8 @@ export MPLCONFIGDIR := /tmp/matplotlib_cache
 export PYTHONPATH := .
 
 .PHONY: all help setup data test mod01 mod02 mod03 mod04 mod05 mod06 clean \
-        interactive demo_interactive play01 play02 play03 play04 play05 play06
+        interactive demo_interactive play01 play02 play03 play04 play05 play06 \
+        web seed_uploads
 
 help:
 	@echo "IEEE Sensors Journal NUC Project Management"
@@ -127,6 +128,14 @@ play05:
 play06:
 	@echo "[PLAY06] Module 6 Interactive Live Multi-Core Scaling Benchmark..."
 	$(PYTHON) -m mod06_runtime_and_parfor_scaling.src.interactive_mod06
+
+web:
+	@echo "[WEB] Launching MATLAB-Style Web Workbench on http://127.0.0.1:8080..."
+	$(PYTHON) -m web_workbench.server --port 8080
+
+seed_uploads:
+	@echo "[SEED] Pre-seeding 6 canonical benchmark runs into uploaded_inputs/ & uploaded_outputs/..."
+	$(PYTHON) -m web_workbench.server --seed-examples
 
 clean:
 	@echo "[CLEAN] Removing build artifacts and bytecode caches..."

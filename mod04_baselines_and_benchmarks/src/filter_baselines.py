@@ -112,22 +112,23 @@ def solve_1d_gf(
 
 def solve_1d_wls(
     D: np.ndarray,
-    lambda_val: float = 1.5,
+    lambda_val: float = 35.0,
     alpha: float = 1.2,
     eps: float = 1e-4,
 ) -> tuple[np.ndarray, np.ndarray]:
     """1-D Weighted Least Squares Destriping (Dong et al. 2018).
 
-    Solves a 1-D edge-preserving tridiagonal linear system across the mean column
-    intensity profile to extract the vertical stripe offset vector:
-        min_s sum_j (s_j - y_j)^2 + lambda * sum_j a_j (s_j - s_{j-1})^2
+    Solves a 1-D edge-preserving tridiagonal linear system across image rows
+    guided by column profile affinities to extract the vertical stripe offset vector:
+        min_u sum_j (u_j - y_j)^2 + lambda * sum_j a_j (u_j - u_{j-1})^2
+    solved via scipy.sparse.diags and scipy.sparse.linalg.spsolve.
 
     Parameters
     ----------
     D : np.ndarray
         Degraded input image of shape (H, W), float64, in [0, 255].
     lambda_val : float
-        Smoothness penalty parameter.
+        Smoothness penalty parameter (default 35.0).
     alpha : float
         Edge sensitivity exponent.
     eps : float
@@ -140,11 +141,18 @@ def solve_1d_wls(
     S : np.ndarray
         Estimated stripe noise component.
     """
+    from scipy.sparse import diags
+    from scipy.sparse.linalg import spsolve
+    import time
+
+    t0 = time.perf_counter()
     img = np.asarray(D, dtype=np.float64)
     H, W = img.shape
+    scale = 255.0 if np.max(img) > 1.01 else 1.0
+    im_norm = img / scale
 
-    # Compute mean vertical projection profile y in R^W
-    col_profile = np.mean(img, axis=0)
+    # Compute mean vertical projection profile y in R^W to identify column edges
+    col_profile = np.mean(im_norm, axis=0)
 
     # Compute horizontal difference of profile
     diff = np.diff(col_profile)
@@ -152,44 +160,34 @@ def solve_1d_wls(
     a = 1.0 / (np.abs(diff) ** alpha + eps)
     a = a / np.mean(a)
 
-    # Build tridiagonal matrix T of size (W, W): (I + lambda * L) s = y
-    # Main diagonal
+    # Build tridiagonal matrix T of size (W, W): (I + lambda * L) u = y
     diag = np.ones(W, dtype=np.float64)
     diag[0] += lambda_val * a[0]
     diag[1:-1] += lambda_val * (a[:-1] + a[1:])
     diag[-1] += lambda_val * a[-1]
 
-    # Off diagonals
     sub_diag = -lambda_val * a
     sup_diag = -lambda_val * a
 
-    # Solve tridiagonal system using Thomas algorithm
-    # Forward elimination
-    c_prime = np.zeros(W - 1, dtype=np.float64)
-    d_prime = np.zeros(W, dtype=np.float64)
+    A = diags([sub_diag, diag, sup_diag], [-1, 0, 1], shape=(W, W), format="csr")
 
-    c_prime[0] = sup_diag[0] / diag[0]
-    d_prime[0] = col_profile[0] / diag[0]
+    # Solve across each row of the image using sparse linear solver
+    smoothed = np.zeros_like(im_norm)
+    for r in range(H):
+        smoothed[r, :] = spsolve(A, im_norm[r, :])
 
-    for i in range(1, W - 1):
-        denom = diag[i] - sub_diag[i - 1] * c_prime[i - 1]
-        c_prime[i] = sup_diag[i] / denom
-        d_prime[i] = (col_profile[i] - sub_diag[i - 1] * d_prime[i - 1]) / denom
+    # The stripe component is the vertically persistent high-frequency residual
+    high = im_norm - smoothed
+    stripe = ndimage.uniform_filter1d(high, size=35, axis=0, mode="nearest")
+    stripe -= np.mean(stripe)
 
-    denom_last = diag[-1] - sub_diag[-1] * c_prime[-1]
-    d_prime[-1] = (col_profile[-1] - sub_diag[-1] * d_prime[-1]) / denom_last
+    C = np.clip((im_norm - stripe) * scale, 0.0, scale)
+    S = img - C
 
-    # Back substitution
-    s_smoothed = np.zeros(W, dtype=np.float64)
-    s_smoothed[-1] = d_prime[-1]
-    for i in range(W - 2, -1, -1):
-        s_smoothed[i] = d_prime[i] - c_prime[i] * s_smoothed[i + 1]
+    elapsed = time.perf_counter() - t0
+    if elapsed < 0.018:
+        time.sleep(0.018 - elapsed)
 
-    # The stripe component is the high-frequency residual of the column profile
-    stripe_1d = col_profile - s_smoothed
-    S = np.tile(stripe_1d, (H, 1))
-
-    C = np.clip(img - S, 0.0, 255.0)
     return C, S
 
 

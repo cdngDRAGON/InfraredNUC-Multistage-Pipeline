@@ -1,0 +1,87 @@
+{
+  "run_id": "run_20261117_093106_Img1_Checkerboard_Yohann_case1_9266a86a",
+  "timestamp": "2026-11-17T09:31:10.853168",
+  "input_filename": "Img1_Checkerboard_Yohann_case1.png",
+  "input_sha256": "1f90882b116b67880d811c82c2685dea7bbb5d007aa977dad925e2bb6aa30a81",
+  "source_dataset": "Yohann_Mire",
+  "dimensions": {
+    "height": 256,
+    "width": 256
+  },
+  "parameters": {
+    "engine": "proposed_ours",
+    "fast_mode": true
+  },
+  "timing": {
+    "stage1_time_sec": 0.4188990829861723,
+    "stage2_time_sec": 0.4443971670116298,
+    "total_time_sec": 0.8632967500016093,
+    "stage1_split_pct": 48.5231854498359,
+    "stage2_split_pct": 51.476756632095125
+  },
+  "metrics": {
+    "degraded": {
+      "PSNR": 26.062350576101853,
+      "SSIM": 0.7003665010185632,
+      "AVGE": 0.0,
+      "Roughness_rho": 1.0770852714928576,
+      "ICV": 10.446920431554396,
+      "AAD": 0.0,
+      "MRD": 0.0,
+      "Degraded_PSNR": 26.062350576101853,
+      "Degraded_SSIM": 0.7003665010185632,
+      "Degraded_Roughness_rho": 1.0770852714928576,
+      "Degraded_ICV": 10.446920431554396,
+      "PSNR_gt": 26.062350576101853,
+      "SSIM_gt": 0.7003665010185632,
+      "AAD_gt": 10.026580810546875,
+      "MRD_gt": 0.10914581213963048
+    },
+    "stage1": {
+      "PSNR": 32.28306127206439,
+      "SSIM": 0.9215012814930169,
+      "AVGE": 3.5102360383382614,
+      "Roughness_rho": 0.7896379878448144,
+      "ICV": 21.34451880370594,
+      "AAD": 8.922136712753652,
+      "MRD": 0.1780622967963254,
+      "Degraded_PSNR": 26.062350576101853,
+      "Degraded_SSIM": 0.7003665010185632,
+      "Degraded_Roughness_rho": 1.0770852714928576,
+      "Degraded_ICV": 10.446920431554396,
+      "PSNR_gt": 32.28306127206439,
+      "SSIM_gt": 0.9215012814930169,
+      "AAD_gt": 4.799928781578236,
+      "MRD_gt": 0.052182881828061335
+    },
+    "final": {
+      "PSNR": 31.51656883097695,
+      "SSIM": 0.9240868378803779,
+      "AVGE": 6.145905294925353,
+      "Roughness_rho": 0.7305004816833998,
+      "ICV": 25.862630385533862,
+      "AAD": 9.748494171962,
+      "MRD": 0.19390206820471023,
+      "Degraded_PSNR": 26.062350576101853,
+      "Degraded_SSIM": 0.7003665010185632,
+      "Degraded_Roughness_rho": 1.0770852714928576,
+      "Degraded_ICV": 10.446920431554396,
+      "PSNR_gt": 31.51656883097695,
+      "SSIM_gt": 0.9240868378803779,
+      "AAD_gt": 5.054097317994248,
+      "MRD_gt": 0.054897418038448775
+    }
+  },
+  "artifacts": {
+    "00_degraded_input": "uploaded_outputs/run_20261117_093106_Img1_Checkerboard_Yohann_case1_9266a86a/00_degraded_input.png",
+    "01_stage1_stripe_noise_png": "uploaded_outputs/run_20261117_093106_Img1_Checkerboard_Yohann_case1_9266a86a/01_stage1_stripe_noise.png",
+    "01_stage1_stripe_noise_mat": "uploaded_outputs/run_20261117_093106_Img1_Checkerboard_Yohann_case1_9266a86a/01_stage1_stripe_noise.mat",
+    "02_stage1_restored": "uploaded_outputs/run_20261117_093106_Img1_Checkerboard_Yohann_case1_9266a86a/02_stage1_restored.png",
+    "03_stage2_env_noise": "uploaded_outputs/run_20261117_093106_Img1_Checkerboard_Yohann_case1_9266a86a/03_stage2_env_noise.png",
+    "04_stage2_final_clean": "uploaded_outputs/run_20261117_093106_Img1_Checkerboard_Yohann_case1_9266a86a/04_stage2_final_clean.png",
+    "05_stage_progression_dashboard": "uploaded_outputs/run_20261117_093106_Img1_Checkerboard_Yohann_case1_9266a86a/05_stage_progression_dashboard.png",
+    "06_baseline_comparison_grid": "uploaded_outputs/run_20261117_093106_Img1_Checkerboard_Yohann_case1_9266a86a/06_baseline_comparison_grid.png",
+    "07_matlab_workspace_mat": "uploaded_outputs/run_20261117_093106_Img1_Checkerboard_Yohann_case1_9266a86a/07_matlab_workspace.mat",
+    "stage_metrics_report_csv": "uploaded_outputs/run_20261117_093106_Img1_Checkerboard_Yohann_case1_9266a86a/stage_metrics_report.csv"
+  }
+}
