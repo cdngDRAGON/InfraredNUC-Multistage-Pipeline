@@ -19,7 +19,7 @@ help:
 	@echo "IEEE Sensors Journal NUC Project Management"
 	@echo "--------------------------------------------"
 	@echo "make setup             : Initialize virtual environment and install dependencies"
-	@echo "make data              : Synthesize 6 clean thermal benchmark scenes (256x256)"
+	@echo "make data              : Harvest 100% authentic real IR benchmark scenes into data/clean_scenes/"
 	@echo "make test              : Execute full test suite via pytest"
 	@echo "make mod01             : Run Mod01: Directional Priors & Nonuniformity Simulator"
 	@echo "make mod02             : Run Mod02: Stage 1 ADMM High-Order Directional Destriping"
@@ -50,8 +50,8 @@ setup:
 	@echo "[SETUP] Environment ready. Python interpreter: $$($(PYTHON) --version)"
 
 data:
-	@echo "[DATA] Generating 6 benchmark thermal scenes in data/clean_scenes/..."
-	$(PYTHON) -m common.dataset_generator
+	@echo "[DATA] Harvesting authentic real thermal scenes in data/clean_scenes/..."
+	$(PYTHON) common/fetch_real_datasets.py
 
 test:
 	@echo "[TEST] Running pytest across common and modules 01-06..."

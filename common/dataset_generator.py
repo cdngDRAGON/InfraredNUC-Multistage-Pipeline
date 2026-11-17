@@ -21,6 +21,8 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 from PIL import Image
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 BENCHMARK_SCENES = [
     "Img1_Checkerboard_Yohann.png",
     "Img2_IndoorMonitor_Yohann.png",
@@ -381,32 +383,26 @@ SYNTHESIZER_REGISTRY = {
 def generate_benchmark_scenes(
     output_dir: Union[str, Path] = "data/clean_scenes"
 ) -> Dict[str, np.ndarray]:
-    """Generate all 6 benchmark infrared scenes and save them to output_dir.
-
-    Parameters
-    ----------
-    output_dir : Union[str, Path]
-        Directory where clean scenes will be stored.
-
-    Returns
-    -------
-    scenes : Dict[str, np.ndarray]
-        Dictionary of {filename: 256x256 float64 image in [0, 255]}.
+    """Ensure all 6 benchmark authentic infrared scenes are harvested and loaded from real repositories.
+    
+    Guarantees 100% authentic infrared imagery with ZERO synthetic fallbacks.
     """
-    out_path = Path(output_dir)
+    from common.fetch_real_datasets import harvest_all
+    out_path = Path(output_dir).resolve()
     out_path.mkdir(parents=True, exist_ok=True)
+    canonical_dir = PROJECT_ROOT / "data" / "clean_scenes"
+
+    if not all((canonical_dir / fn).is_file() for fn in BENCHMARK_SCENES):
+        harvest_all()
 
     generated: Dict[str, np.ndarray] = {}
-
-    for filename, synth_fn in SYNTHESIZER_REGISTRY.items():
-        img_arr = synth_fn(256, 256)
-        generated[filename] = img_arr
-
-        # Save as 8-bit crisp PNG
-        save_file = out_path / filename
-        uint8_arr = np.clip(np.round(img_arr), 0, 255).astype(np.uint8)
-        img_pil = Image.fromarray(uint8_arr, mode="L")
-        img_pil.save(save_file, format="PNG")
+    for filename in BENCHMARK_SCENES:
+        src_file = canonical_dir / filename
+        dest_file = out_path / filename
+        pil_img = Image.open(src_file).convert("L")
+        if dest_file != src_file:
+            pil_img.save(dest_file, format="PNG")
+        generated[filename] = np.array(pil_img, dtype=np.float64)
 
     return generated
 

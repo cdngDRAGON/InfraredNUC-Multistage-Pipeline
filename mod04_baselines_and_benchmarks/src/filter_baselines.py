@@ -13,75 +13,73 @@ from scipy import ndimage
 
 
 # ==============================================================================
-# 1. 1D Guided Filter (1D-GF) - Cao et al. (2016)
+# 1. 1D Guided Filter (1D-GF) - Cao et al. (2016) [Exact Port of 1D-GF/GF.m]
 # ==============================================================================
 
-def _guided_filter_1d_horizontal(
-    p: np.ndarray,
-    I: np.ndarray,
-    radius: int = 8,
-    eps: float = 0.04,
-) -> np.ndarray:
-    """Apply 1D horizontal guided filter row-by-row.
+def _row_box_filter(im_src: np.ndarray, r: int) -> np.ndarray:
+    w = 2 * r + 1
+    return ndimage.uniform_filter1d(im_src, size=w, axis=1, mode="nearest") * w
 
-    Parameters
-    ----------
-    p : np.ndarray
-        Filtering input image of shape (H, W).
-    I : np.ndarray
-        Guidance image of shape (H, W).
-    radius : int
-        1D filter window radius.
-    eps : float
-        Regularization parameter penalizing large a coefficients.
 
-    Returns
-    -------
-    q : np.ndarray
-        Filtered output image of shape (H, W).
-    """
-    H, W = p.shape
-    ksize = 2 * radius + 1
-    # 1D box filter kernel along horizontal axis (axis 1)
-    kernel_1d = np.ones((1, ksize), dtype=np.float64) / ksize
+def _col_box_filter(im_src: np.ndarray, r: int) -> np.ndarray:
+    h = 2 * r + 1
+    return ndimage.uniform_filter1d(im_src, size=h, axis=0, mode="nearest") * h
 
-    mean_I = ndimage.convolve(I, kernel_1d, mode="reflect")
-    mean_p = ndimage.convolve(p, kernel_1d, mode="reflect")
 
-    mean_Ip = ndimage.convolve(I * p, kernel_1d, mode="reflect")
+def _row_guided_filter(I: np.ndarray, p: np.ndarray, r: int = 4, eps: float = 0.16) -> np.ndarray:
+    hei, wid = I.shape
+    N = _row_box_filter(np.ones((hei, wid), dtype=np.float64), r)
+    mean_I = _row_box_filter(I, r) / N
+    mean_p = _row_box_filter(p, r) / N
+    mean_Ip = _row_box_filter(I * p, r) / N
     cov_Ip = mean_Ip - mean_I * mean_p
-
-    mean_II = ndimage.convolve(I * I, kernel_1d, mode="reflect")
+    mean_II = _row_box_filter(I * I, r) / N
     var_I = mean_II - mean_I * mean_I
-
     a = cov_Ip / (var_I + eps)
     b = mean_p - a * mean_I
+    mean_a = _row_box_filter(a, r) / N
+    mean_b = _row_box_filter(b, r) / N
+    return mean_a * I + mean_b
 
-    mean_a = ndimage.convolve(a, kernel_1d, mode="reflect")
-    mean_b = ndimage.convolve(b, kernel_1d, mode="reflect")
 
-    q = mean_a * I + mean_b
-    return q
+def _col_guided_filter(I: np.ndarray, p: np.ndarray, r: int, eps: float = 0.04) -> np.ndarray:
+    hei, wid = I.shape
+    N = _col_box_filter(np.ones((hei, wid), dtype=np.float64), r)
+    mean_I = _col_box_filter(I, r) / N
+    mean_p = _col_box_filter(p, r) / N
+    mean_Ip = _col_box_filter(I * p, r) / N
+    cov_Ip = mean_Ip - mean_I * mean_p
+    mean_II = _col_box_filter(I * I, r) / N
+    var_I = mean_II - mean_I * mean_I
+    a = cov_Ip / (var_I + eps)
+    b = mean_p - a * mean_I
+    mean_a = _col_box_filter(a, r) / N
+    mean_b = _col_box_filter(b, r) / N
+    return mean_a * I + mean_b
 
 
 def solve_1d_gf(
     D: np.ndarray,
-    radius: int = 8,
-    eps: float = 0.04,
+    r_row: int = 4,
+    eps_row: float = 0.16,
+    eps_col: float = 0.04,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """1D Guided Filter Destriping (Cao et al. 2016).
+    """1D Guided Filter Destriping (Cao et al. 2016, exact port of 1D-GF/GF.m).
 
     Separates high-frequency vertical stripe components from the low-frequency
-    radiometric background by performing 1D guided smoothing along the horizontal axis.
+    radiometric background by performing 1D row guided filtering followed by
+    1D column guided filtering on the residual high-pass band.
 
     Parameters
     ----------
     D : np.ndarray
         Degraded input image of shape (H, W), float64, in [0, 255].
-    radius : int
-        Horizontal filter radius. Default 8.
-    eps : float
-        Regularization parameter. Default 0.04.
+    r_row : int
+        Row filter radius (default 4 matching authors' MATLAB code).
+    eps_row : float
+        Row filter regularization parameter (0.4^2 = 0.16).
+    eps_col : float
+        Column filter regularization parameter (0.2^2 = 0.04).
 
     Returns
     -------
@@ -91,25 +89,21 @@ def solve_1d_gf(
         Estimated stripe noise residual.
     """
     img = np.asarray(D, dtype=np.float64)
+    scale = 255.0 if np.max(img) > 1.01 else 1.0
+    im_input = img / scale
 
-    # In infrared destriping, vertical stripes are constant along columns.
-    # Vertical mean profile or vertically smoothed image acts as guidance.
-    # Apply vertical pre-smoothing to isolate column-correlated signal
-    I_guidance = ndimage.uniform_filter1d(img, size=15, axis=0, mode="reflect")
+    # Step 1: 1D row guided filtering
+    smooth = _row_guided_filter(im_input, im_input, r=r_row, eps=eps_row)
+    highpart = im_input - smooth
 
-    # Apply 1D horizontal guided filter
-    base_background = _guided_filter_1d_horizontal(img, I_guidance, radius=radius, eps=eps)
+    # Step 2: 1D column guided filtering
+    hei = im_input.shape[0]
+    r_col = max(1, int(round(0.5 * (hei * 0.25 - 1))))
+    strip = _col_guided_filter(smooth, highpart, r=r_col, eps=eps_col)
 
-    # High frequency detail containing stripes
-    detail = img - base_background
-
-    # Column-wise average of detail represents the estimated stripe component
-    stripe_est = np.mean(detail, axis=0, keepdims=True)
-    stripe_est = np.tile(stripe_est, (img.shape[0], 1))
-
-    C = np.clip(img - stripe_est, 0.0, 255.0)
-    S = img - C
-    return C, S
+    im_output = np.clip((im_input - strip) * scale, 0.0, 255.0)
+    S = img - im_output
+    return im_output, S
 
 
 # ==============================================================================

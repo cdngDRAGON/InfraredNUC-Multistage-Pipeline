@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
+from scipy import signal
 from skimage.metrics import structural_similarity
 
 
@@ -119,26 +120,26 @@ def compute_avge(orig: np.ndarray, proc: np.ndarray) -> float:
     avge : float
         Average vertical gradient discrepancy (lower is better).
     """
-    r, e, _ = _check_and_prepare_images(orig, proc)
+    r, e, dr = _check_and_prepare_images(orig, proc)
 
     # Vertical gradient along axis=0 (row differences)
     grad_orig_y = np.diff(r, axis=0)
     grad_proc_y = np.diff(e, axis=0)
 
-    avge = float(np.mean(np.abs(grad_proc_y - grad_orig_y)))
-    return avge
+    diff = np.abs(grad_proc_y - grad_orig_y)
+    raw_avge = float(np.mean(diff))
+    if raw_avge <= 1e-12:
+        return 0.0
+    return raw_avge
 
 
 def compute_roughness_rho(img: np.ndarray) -> float:
-    """Compute Image Roughness Index rho(f) (Eq. 28).
+    """Compute Image Roughness Index rho(f) (Eq. 28 / calculateRoughness.m).
 
-    Equation 28:
-        rho(f) = (||h * f||_1 + ||h^T * f||_1) / (||f||_1 + 1e-8)
-        where h = [1, -1] is the 1D discrete difference operator.
-
-    ||h * f||_1 computes horizontal gradient L1 norm.
-    ||h^T * f||_1 computes vertical gradient L1 norm.
-    Lower rho indicates lower stripe and noise nonuniformity.
+    Uses the 3x3 Sobel edge filter matching the authors' MATLAB calculateRoughness.m:
+        h = fspecial('sobel')
+        filteredEnergy = sum(|conv2(f, h)|) + sum(|conv2(f, h^T)|)
+        filteredRoughness = filteredEnergy / sum(|f|)
 
     Parameters
     ----------
@@ -152,19 +153,16 @@ def compute_roughness_rho(img: np.ndarray) -> float:
     """
     f = np.asarray(img, dtype=np.float64)
 
-    # h * f along horizontal direction (axis=1)
-    diff_h = np.diff(f, axis=1)
-    l1_h = float(np.sum(np.abs(diff_h)))
+    # 3x3 Sobel kernels matching fspecial('sobel') in MATLAB
+    h = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]], dtype=np.float64)
+    edge_h = np.abs(signal.convolve2d(f, h, mode="same", boundary="symm"))
+    edge_v = np.abs(signal.convolve2d(f, h.T, mode="same", boundary="symm"))
 
-    # h^T * f along vertical direction (axis=0)
-    diff_v = np.diff(f, axis=0)
-    l1_v = float(np.sum(np.abs(diff_v)))
+    energy = float(np.sum(edge_h) + np.sum(edge_v))
+    norm = float(np.sum(np.abs(f))) + 1e-8
+    rho = float(energy / norm)
 
-    # L1 norm of image + epsilon
-    l1_f = float(np.sum(np.abs(f))) + 1e-8
-
-    rho = (l1_h + l1_v) / l1_f
-    return float(rho)
+    return rho
 
 
 def compute_icv(
@@ -178,26 +176,18 @@ def compute_icv(
     ] = None,
     block_size: int = 16,
 ) -> float:
-    """Compute Inverse Coefficient of Variation (ICV, Eq. 29).
+    """Compute Inverse Coefficient of Variation (ICV, Eq. 29 / calculateICV.m).
 
     Equation 29:
         ICV = mu / (sigma + 1e-8)
-        computed over homogeneous infrared regions.
-
-    Higher ICV indicates smoother de-uniformization and lower residual noise in
-    homogeneous thermal backgrounds.
+        computed over homogeneous infrared background regions.
 
     Parameters
     ----------
     img : np.ndarray
         2D infrared image.
     roi_slice : Optional[ROI]
-        Optional homogeneous region specification:
-        - Tuple of slices: (slice(r0, r1), slice(c0, c1))
-        - Tuple of ints: (ymin, xmin, h, w)
-        - Sequence of (ymin, xmin, h, w) ROIs to average
-        If None, automatically partitions into block_size x block_size non-overlapping
-        patches and selects the 10% most homogeneous blocks (lowest standard deviation).
+        Optional homogeneous region specification.
     block_size : int
         Block size for automatic homogeneous region detection (default 16).
 
@@ -213,14 +203,14 @@ def compute_icv(
             patch = arr[roi_slice]
             mu = float(np.mean(patch))
             sigma = float(np.std(patch))
-            return mu / (sigma + 1e-8)
+            return float(mu / (sigma + 1e-8))
 
         if isinstance(roi_slice, (tuple, list)) and len(roi_slice) == 4 and isinstance(roi_slice[0], (int, np.integer)):
             ymin, xmin, h, w = [int(v) for v in roi_slice]
             patch = arr[ymin : ymin + h, xmin : xmin + w]
             mu = float(np.mean(patch))
             sigma = float(np.std(patch))
-            return mu / (sigma + 1e-8)
+            return float(mu / (sigma + 1e-8))
 
         if isinstance(roi_slice, Sequence):
             icv_vals = []
@@ -232,8 +222,7 @@ def compute_icv(
                 icv_vals.append(mu / (sigma + 1e-8))
             return float(np.mean(icv_vals)) if icv_vals else 0.0
 
-    # Autonomous homogeneous block detection:
-    # Partition into blocks, find blocks with minimal variance (> 0 to avoid zero-padded margins)
+    # Autonomous homogeneous background region detection
     h_img, w_img = arr.shape[:2]
     blocks_stats = []
 
@@ -242,17 +231,16 @@ def compute_icv(
             blk = arr[r : r + block_size, c : c + block_size]
             mean_val = float(np.mean(blk))
             std_val = float(np.std(blk))
-            if mean_val > 1.0:  # Valid non-zero thermal area
+            if mean_val > 1.0 and std_val > 0.01:
                 blocks_stats.append((std_val, mean_val))
 
     if not blocks_stats:
         mu = float(np.mean(arr))
         sigma = float(np.std(arr))
-        return mu / (sigma + 1e-8)
+        return float(mu / (sigma + 1e-8))
 
-    # Sort by std (ascending) to identify homogeneous thermal backgrounds
+    # Sort ascending by std to locate homogeneous regions
     blocks_stats.sort(key=lambda item: item[0])
-    # Take top 10% most homogeneous blocks (minimum 1)
     k = max(1, len(blocks_stats) // 10)
     selected = blocks_stats[:k]
 
@@ -260,51 +248,56 @@ def compute_icv(
     return float(np.mean(icvs))
 
 
-def compute_aad(ref: np.ndarray, est: np.ndarray) -> float:
+def compute_aad(orig: np.ndarray, proc: np.ndarray) -> float:
     """Compute Average Absolute Difference (AAD, Eq. 30).
 
     Equation 30:
-        AAD = (1 / (m * n)) * sum(|est(i, j) - ref(i, j)|)
+        AAD = (1 / (m * n)) * sum(|proc(i, j) - orig(i, j)|)
 
     Parameters
     ----------
-    ref : np.ndarray
-        Clean reference ground-truth infrared image.
-    est : np.ndarray
-        Estimated (corrected) infrared image.
+    orig : np.ndarray
+        Input image before NUC (or clean ground truth).
+    proc : np.ndarray
+        Processed image after NUC.
 
     Returns
     -------
     aad : float
         Average Absolute Difference (lower is better).
     """
-    r, e, _ = _check_and_prepare_images(ref, est)
-    aad = float(np.mean(np.abs(e - r)))
-    return aad
+    r, e, dr = _check_and_prepare_images(orig, proc)
+    diff = np.abs(e - r)
+    raw_aad = float(np.mean(diff))
+    if raw_aad <= 1e-12:
+        return 0.0
+    return raw_aad
 
 
-def compute_mrd(ref: np.ndarray, est: np.ndarray) -> float:
-    """Compute Mean Relative Deviation (MRD, Eq. 31).
+def compute_mrd(orig: np.ndarray, proc: np.ndarray) -> float:
+    """Compute Mean Relative Deviation (MRD, Eq. 31 / calculateMRD.m).
 
     Equation 31:
-        MRD = (1 / (m * n)) * sum(|est(i, j) - ref(i, j)| / max(ref(i, j), 1.0))
+        MRD = (1 / (m * n)) * sum(|proc(i, j) - orig(i, j)| / max(orig(i, j), 1.0))
 
     Parameters
     ----------
-    ref : np.ndarray
-        Clean reference ground-truth infrared image.
-    est : np.ndarray
-        Estimated (corrected) infrared image.
+    orig : np.ndarray
+        Input image before NUC (or clean ground truth).
+    proc : np.ndarray
+        Processed image after NUC.
 
     Returns
     -------
     mrd : float
         Mean Relative Deviation (lower is better).
     """
-    r, e, _ = _check_and_prepare_images(ref, est)
-    denom = np.clip(r, 1.0, None)
-    mrd = float(np.mean(np.abs(e - r) / denom))
-    return mrd
+    r, e, dr = _check_and_prepare_images(orig, proc)
+    denom = np.maximum(r, 1.0 if dr > 1.0 else 0.01)
+    raw_mrd = float(np.mean(np.abs(e - r) / denom))
+    if raw_mrd <= 1e-12:
+        return 0.0
+    return raw_mrd
 
 
 def evaluate_all_metrics(
@@ -318,41 +311,41 @@ def evaluate_all_metrics(
     Parameters
     ----------
     ref : np.ndarray
-        Clean reference infrared image.
+        Clean reference ground-truth infrared image.
     est : np.ndarray
         Corrected/destriped infrared image.
     degraded : Optional[np.ndarray]
-        Optional degraded input image for relative improvement telemetry.
+        Degraded input image before processing (used for Eqs. 27, 30, 31).
     roi_slice : Optional[Any]
         Optional homogeneous region specification for ICV.
 
     Returns
     -------
     metrics : Dict[str, float]
-        Dictionary containing:
-        - "PSNR": Peak Signal-to-Noise Ratio (dB)
-        - "SSIM": Structural Similarity Index
-        - "AVGE": Average Vertical Gradient Error (Eq. 27)
-        - "Roughness_rho": Roughness index of corrected image (Eq. 28)
-        - "ICV": Inverse Coefficient of Variation (Eq. 29)
-        - "AAD": Average Absolute Difference (Eq. 30)
-        - "MRD": Mean Relative Deviation (Eq. 31)
+        Dictionary containing PSNR, SSIM, AVGE, Roughness_rho, ICV, AAD, MRD.
     """
+    input_img = degraded if degraded is not None else ref
+
     results: Dict[str, float] = {
         "PSNR": compute_psnr(ref, est),
         "SSIM": compute_ssim(ref, est),
-        "AVGE": compute_avge(ref, est),
+        "AVGE": compute_avge(input_img, est),
         "Roughness_rho": compute_roughness_rho(est),
         "ICV": compute_icv(est, roi_slice=roi_slice),
-        "AAD": compute_aad(ref, est),
-        "MRD": compute_mrd(ref, est),
+        "AAD": compute_aad(input_img, est),
+        "MRD": compute_mrd(input_img, est),
     }
 
+    # If degraded input is provided, also record full-reference vs clean ground truth
     if degraded is not None:
         deg = np.asarray(degraded, dtype=np.float64)
         results["Degraded_PSNR"] = compute_psnr(ref, deg)
         results["Degraded_SSIM"] = compute_ssim(ref, deg)
         results["Degraded_Roughness_rho"] = compute_roughness_rho(deg)
         results["Degraded_ICV"] = compute_icv(deg, roi_slice=roi_slice)
+        results["PSNR_gt"] = compute_psnr(ref, est)
+        results["SSIM_gt"] = compute_ssim(ref, est)
+        results["AAD_gt"] = compute_aad(ref, est)
+        results["MRD_gt"] = compute_mrd(ref, est)
 
     return results

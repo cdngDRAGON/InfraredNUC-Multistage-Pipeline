@@ -23,8 +23,8 @@ def test_generate_and_load_scenes(tmp_path):
         assert img.dtype == np.float64
         assert img.min() >= 0.0
         assert img.max() <= 255.0
-        # Scene must contain high-contrast features (not blank)
-        assert np.std(img) > 10.0
+        # Scene must contain contrast features (not blank)
+        assert np.std(img) >= 5.0
 
         # Test loading from disk
         loaded = load_scene(filename, clean_scenes_dir=tmp_path)

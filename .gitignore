@@ -55,6 +55,9 @@ htmlcov/
 *.snm
 *.vrb
 
+# External Cloned Repositories (large datasets & third-party code)
+data/external_repos/
+
 # Explicitly preserve critical benchmark data, figures, and publication PDFs
 !results/*.png
 !results/*.csv

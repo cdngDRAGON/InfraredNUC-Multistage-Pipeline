@@ -1,13 +1,13 @@
 Scene,Component,Frobenius_Norm,Energy_Top_1(%),Energy_Top_2(%),Energy_Top_5(%),Energy_Top_10(%),Energy_Top_20(%)
-Img1_Checkerboard_Yohann.png,Clean Scene (C),36664.48725947221,88.709,98.505,99.985,99.997,99.997
-Img1_Checkerboard_Yohann.png,Degraded Scene (D),36820.03968608351,88.631,98.341,99.817,99.84,99.862
+Img1_Checkerboard_Yohann.png,Clean Scene (C),35234.44929326978,93.622,95.013,96.963,98.289,99.043
+Img1_Checkerboard_Yohann.png,Degraded Scene (D),35398.821205298205,93.485,94.86,96.804,98.133,98.896
 Img1_Checkerboard_Yohann.png,Stripe Component (S),3023.599952981928,99.987,100.0,100.0,100.0,100.0
-Img2_IndoorMonitor_Yohann.png,Clean Scene (C),33847.63907571692,97.811,99.59,99.921,99.997,99.997
-Img2_IndoorMonitor_Yohann.png,Degraded Scene (D),34023.45108731466,97.577,99.39,99.725,99.809,99.836
+Img2_IndoorMonitor_Yohann.png,Clean Scene (C),32421.531024922297,94.363,95.878,98.155,99.245,99.694
+Img2_IndoorMonitor_Yohann.png,Degraded Scene (D),32549.81233741568,94.309,95.791,97.989,99.06,99.517
 Img2_IndoorMonitor_Yohann.png,Stripe Component (S),3023.599952981928,99.987,100.0,100.0,100.0,100.0
-Img3_BuildingSkyline_He.png,Clean Scene (C),29378.398118345383,96.868,98.532,99.709,99.995,99.996
-Img3_BuildingSkyline_He.png,Degraded Scene (D),29578.213958612007,96.524,98.168,99.367,99.747,99.783
+Img3_BuildingSkyline_He.png,Clean Scene (C),18822.33410074319,90.721,95.438,98.175,99.231,99.706
+Img3_BuildingSkyline_He.png,Degraded Scene (D),19102.771732697296,90.417,95.039,97.65,98.667,99.177
 Img3_BuildingSkyline_He.png,Stripe Component (S),3023.599952981928,99.987,100.0,100.0,100.0,100.0
-Img4_HousePedestrian_He.png,Clean Scene (C),23597.28304275728,93.766,97.218,99.461,99.89,99.945
-Img4_HousePedestrian_He.png,Degraded Scene (D),23812.77722248624,93.455,96.761,99.015,99.488,99.6
+Img4_HousePedestrian_He.png,Clean Scene (C),22407.779474994837,79.494,89.45,96.619,98.705,99.627
+Img4_HousePedestrian_He.png,Degraded Scene (D),22628.441764264666,80.224,89.339,96.31,98.356,99.28
 Img4_HousePedestrian_He.png,Stripe Component (S),3023.599952981928,99.987,100.0,100.0,100.0,100.0
