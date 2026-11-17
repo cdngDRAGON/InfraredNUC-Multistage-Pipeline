@@ -1,0 +1,110 @@
+% ==============================================================================
+% IEEE Sensors Journal (February 2026)
+% Section IV-C3: Ablation Studies, Parametric Sensitivity, and Stress Tests
+% ==============================================================================
+
+\subsection{Ablation Studies and Operational Stress Analyses}
+\label{subsec:ablation_and_stress_tests}
+
+To rigorously assess the individual contribution of each algorithmic component, confirm hyperparameter stability, and verify operational robustness under severe infrared sensing degradation, this section presents four systematic experimental evaluations corresponding to Figs.~\ref{fig:ablation_iterations_visual}--\ref{fig:ablation_patch_count_curves}.
+
+% ------------------------------------------------------------------------------
+% 1. Ablation 1: Iterations K (Figs. 16 & 17)
+% ------------------------------------------------------------------------------
+\subsubsection{Convergence Trajectory and Stripe Decoupling Across Iterations $K$}
+\label{subsubsec:ablation_iterations}
+Stage~1 decouples the low-rank column-correlated stripe noise $\mathbf{S}$ from latent radiant scene $\mathbf{C}$ via an alternating direction minimization framework. Fig.~\ref{fig:ablation_iterations_visual} depicts the visual progression of the restored thermal scene and the estimated stripe matrix across iteration thresholds $K \in \{150, 200, 250, 300\}$.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig16_iterations_visual.png}
+\caption{Visual ablation of Stage~1 ADMM iteration count $K \in \{150, 200, 250, 300\}$ on benchmark scene \texttt{Img1\_Checkerboard}. Top row: Clean ground-truth scene and restored thermal estimates $\mathbf{C}^{(K)}$. Bottom row: Simulated ground-truth stripe noise and estimated stripe matrices $\mathbf{S}^{(K)}$. In early iterations ($K=150, 200$), structural scene boundaries leak into the stripe estimate; at $K=250$, complete decoupling is achieved with zero semantic leakage.}
+\label{fig:ablation_iterations_visual}
+\end{figure*}
+
+At lower iteration budgets ($K=150$ and $K=200$), the primal-dual discrepancy between the gradient auxiliary variables $[\mathbf{G}_x, \mathbf{G}_y, \mathbf{H}]$ and the true scene derivatives has not yet attained consensus. As a consequence, high-contrast thermal edges from the checkerboard pattern leak into the low-rank Schatten-$1/2$ singular value decomposition, manifesting as phantom rectangular boundaries within the estimated stripe matrix $\mathbf{S}^{(K)}$ (Fig.~\ref{fig:ablation_iterations_visual}, bottom row). As iterations advance to $K=250$, the relative change satisfies $\|\mathbf{C}^{k+1} - \mathbf{C}^k\|_F / \|\mathbf{C}^k\|_F < 10^{-4}$, completely purging scene geometry from $\mathbf{S}^{(250)}$ and isolating pure column disparities ($\partial \mathbf{S} / \partial y \approx 0$).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig17_iterations_psnr_ssim.png}
+\caption{Quantitative reconstruction performance as a function of iteration count $K \in \{150, 200, 250, 300\}$. (a) Restored PSNR bar chart with reference ground-truth level ($43.65$\,dB). (b) Structural Similarity Index (SSIM) trajectory exhibiting steady convergence and plateauing at $K=250$.}
+\label{fig:ablation_iterations_curves}
+\end{figure}
+
+Fig.~\ref{fig:ablation_iterations_curves} quantifies this convergence behavior. As shown in Fig.~\ref{fig:ablation_iterations_curves}(a), the restored PSNR rises monotonically from $40.85$\,dB at $K=150$ to the benchmark reference of $43.65$\,dB at $K=250$. Simultaneously, Fig.~\ref{fig:ablation_iterations_curves}(b) shows that SSIM rises sharply and plateaus at $0.9820$. Extending iterations to $K=300$ yields negligible quantitative gain ($<0.02$\,dB) while incurring a $20\%$ computational overhead penalty. Hence, $K=250$ represents the optimal operational stopping threshold.
+
+% ------------------------------------------------------------------------------
+% 2. Ablation 2: Regularization Lambdas (Fig. 18)
+% ------------------------------------------------------------------------------
+\subsubsection{Sensitivity to Regularization Hyperparameters ($\lambda_1, \lambda_2, \lambda_3$)}
+\label{subsubsec:ablation_lambdas}
+The Stage~1 objective functional balances three regularization priors parameterized by $(\lambda_1, \lambda_2, \lambda_3)$:
+\begin{equation}
+\label{eq:admm_energy_functional}
+\min_{\mathbf{C}, \mathbf{S}} \frac{1}{2}\|\mathbf{D} - \mathbf{C} - \mathbf{S}\|_F^2 + \lambda_1 \|\mathbf{S}\|_{S_{1/2}}^{1/2} + \lambda_2 \|\nabla \mathbf{C}\|_1 + \lambda_3 \left\|\frac{\partial^2 \mathbf{C}}{\partial x^2}\right\|_1.
+\end{equation}
+To determine sensitivity, each hyperparameter was varied across logarithmic intervals $\{10^{-2}, 10^{-3}, 10^{-4}\}$ while maintaining the remaining two at baseline $10^{-3}$. Fig.~\ref{fig:ablation_lambdas_grid} displays the resulting restored thermal images alongside the corresponding stripe error maps $\mathbf{E}_S = |\mathbf{S}_{\mathrm{est}} - \mathbf{S}_{\mathrm{GT}}|$.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig18_regularization_lambdas.png}
+\caption{Parametric sensitivity analysis across 9 configurations for $(\lambda_1, \lambda_2, \lambda_3) \in \{10^{-2}, 10^{-3}, 10^{-4}\}$. Each cell pairs the restored clean scene with the absolute stripe estimation error map $\mathbf{E}_S$. Setting $\lambda_1 = \lambda_2 = \lambda_3 = 10^{-3}$ delivers minimal stripe estimation error and maximal texture preservation.}
+\label{fig:ablation_lambdas_grid}
+\end{figure*}
+
+\begin{itemize}
+    \item \textbf{Low-Rank Stripe Weight $\lambda_1$}: Increasing $\lambda_1 = 10^{-2}$ over-penalizes the singular value spectrum of $\mathbf{S}$, truncating genuine non-uniformity disparities and leaving persistent residual stripes in $\mathbf{C}$. Conversely, setting $\lambda_1 = 10^{-4}$ under-constrains the low-rank subspace, causing $\mathbf{S}$ to absorb native scene radiance and diminishing thermal contrast ($\mathrm{MAE} = 4.58$).
+    \item \textbf{First-Order TV Weight $\lambda_2$}: At $\lambda_2 = 10^{-2}$, excessive gradient shrinkage induces severe piecewise-constant staircasing and obliterates subtle thermal texture. At $\lambda_2 = 10^{-4}$, high-frequency noise variance is insufficiently regularized, degrading SSIM to $0.7529$.
+    \item \textbf{Second-Order Horizontal TV Weight $\lambda_3$}: Setting $\lambda_3 = 10^{-2}$ causes over-smoothing across vertical scene features (e.g. wall pillars and object edges). Conversely, when $\lambda_3 = 10^{-4}$, horizontal curvature across detector columns is weakly penalized, causing severe stripe residuals to persist ($\mathrm{MAE} = 6.56$, $\mathrm{PSNR} = 29.01$\,dB).
+\end{itemize}
+The balanced configuration $\lambda_1 = \lambda_2 = \lambda_3 = 10^{-3}$ attains the highest joint fidelity ($\mathrm{PSNR} = 32.59$\,dB, $\mathrm{SSIM} = 0.9304$ in Stage~1 alone).
+
+% ------------------------------------------------------------------------------
+% 3. Ablation 3: Noise Stress Testing (Figs. 19 & 20)
+% ------------------------------------------------------------------------------
+\subsubsection{Stress Testing Under Nonuniform Noise Extremes}
+\label{subsubsec:ablation_noise_stress}
+Operational IRFPAs deployed in harsh industrial and aerospace environments encounter severe non-idealities. To establish stress margins, the full pipeline was tested against escalating levels of stripe amplitude and ambient Gaussian noise.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig19_stripe_intensity_stress.png}
+\caption{Operational stress testing across increasing vertical stripe intensities ($\sigma_s \in \{8, 16, 24, 32, 40\}$, $\sigma_n = 5.0$). Displayed from top to bottom: Degraded Image, Ground Truth Stripes, Restored Clean Scene, and Estimated Stripe Noise across Cases 1--5. Even under extreme corruption ($\sigma_s = 40$), the pipeline achieves clean stripe extraction and artifact-free reconstruction.}
+\label{fig:ablation_stripe_stress}
+\end{figure*}
+
+Fig.~\ref{fig:ablation_stripe_stress} presents the results of varying vertical stripe intensity across five levels: Case~1 ($\sigma_s = 8$) to Case~5 ($\sigma_s = 40$), with environmental noise held constant ($\sigma_n = 5$). As column disparities intensify, the Schatten-$1/2$ shrinkage operator combined with directional curvature constraints robustly isolates the column noise matrix without over-filtering adjacent clean columns, maintaining a substantial restoration gain ($\Delta\mathrm{PSNR} > +6.5$\,dB in Case~5).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig20_env_noise_intensity_stress.png}
+\caption{Operational stress testing under escalating ambient thermal noise ($\sigma_n \in \{4, 8, 14, 20\}$, $\sigma_s = 15.0$). Top: Degraded observations. Bottom: Restored thermal scenes produced by the complete multistage pipeline.}
+\label{fig:ablation_env_stress}
+\end{figure}
+
+Fig.~\ref{fig:ablation_env_stress} examines resilience to severe thermal ambient fluctuations, varying $\sigma_n \in \{4, 8, 14, 20\}$ under fixed stripe amplitude ($\sigma_s = 15$). While Stage~1 eliminates directional column artifacts, Stage~2's non-local patch grouping and adaptive SVD thresholding (Eq.~26) eliminate the severe isotropic noise grain, consistently restoring clear structural contours.
+
+% ------------------------------------------------------------------------------
+% 4. Ablation 4: Patch Count L (Figs. 21 & 22)
+% ------------------------------------------------------------------------------
+\subsubsection{Influence of Stage~2 Patch Manifold Cardinality $L$}
+\label{subsubsec:ablation_patch_count}
+Stage~2 aggregates $L$ non-local similar patches into an observation matrix $\mathbf{G} \in \mathbb{R}^{d \times L}$ ($d = 11 \times 11 = 121$). To evaluate the impact of cluster size $L$, we evaluated the Stage~1 output alone (``w/o Stage~2'', yielding $36.67$\,dB) alongside Stage~2 sweeps across $L \in \{20, 25, 30, 35, 40, 45, 50, 55, 60\}$.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig21_patch_count_visual.png}
+\caption{Visual comparison of Stage~2 denoising across varying patch cluster cardinalities $L \in \{20, 25, 30, 35, 40, 45, 50, 55, 60\}$ alongside Ground Truth, Degraded, and ``Restore Image w/o Stage~2''. The configuration $L=50$ maximizes noise suppression while preventing patch blurring.}
+\label{fig:ablation_patch_count_visual}
+\end{figure*}
+
+Fig.~\ref{fig:ablation_patch_count_visual} illustrates the visual progression. For $L < 35$, the patch matrix lacks sufficient statistical sample density, resulting in residual noise grain in flat homogeneous regions. When $L$ reaches $50$, the low-rank subspace cleanly isolates noise singular values via the calibrated threshold $\tau^2 = \gamma d L \sigma_n^2$, yielding pristine radiometric uniformity.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig22_patch_count_psnr_ssim.png}
+\caption{Stage~2 quantitative restoration performance across patch count $L$. (a) Lime-green PSNR bar chart with reference baseline (``Restore Image w/o Stage~2: $36.67$\,dB''). (b) SSIM trajectory exhibiting an inflection and plateauing at $0.934$ for $L \ge 45$, confirming $L=50$ as the global optimum.}
+\label{fig:ablation_patch_count_curves}
+\end{figure}
+
+Fig.~\ref{fig:ablation_patch_count_curves} quantifies this phenomenon. In Fig.~\ref{fig:ablation_patch_count_curves}(a), the lime-green bar chart confirms a $+4.58$\,dB gain over the Stage~1 baseline ($36.67$\,dB), peaking at $41.25$\,dB for $L=50$. In Fig.~\ref{fig:ablation_patch_count_curves}(b), the SSIM curve exhibits a sharp initial slope from $L=20$ ($0.885$) to $L=45$ ($0.931$), reaching a stable plateau at $0.934$ for $L \ge 45$. For $L > 50$, dissimilar patches with larger Euclidean distances contaminate the observation matrix, increasing execution latency without yielding measurable fidelity gains. Thus, $L=50$ is established as the optimal operational parameter.
