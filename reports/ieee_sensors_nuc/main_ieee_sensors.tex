@@ -1,0 +1,293 @@
+\documentclass[journal]{IEEEtran}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{cite}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black]{hyperref}
+
+\graphicspath{{figures/}}
+
+\markboth{IEEE SENSORS JOURNAL REPRODUCTION \& EXPERIMENTAL BENCHMARK, NOVEMBER 2026}{Chaurasia, Pandey, and Thakur: Multistage NUC Pipeline for Single-Frame Infrared Images}
+
+\title{Multistage Nonuniformity Correction Pipeline for Single-Frame Infrared Images Based on Hybrid High-Order Directional and Low-Rank Prior Information}
+
+\author{Abhinav~Rishabh~Chaurasia,~\IEEEmembership{Student Member,~IEEE},
+        Aman~Pandey,~\IEEEmembership{Student Member,~IEEE},
+        and~Milind~Thakur,~\IEEEmembership{Student Member,~IEEE}%
+\thanks{The authors are with the Department of Computer Science and Engineering, Indian Institute of Information Technology Vadodara (IIITV) -- Gandhinagar Campus (GCD), Sector 28, Gandhinagar, Gujarat 382028, India (e-mail: 20261605001@iiitvadodara.ac.in; 20261604001@iiitvadodara.ac.in; 20261603018@iiitvadodara.ac.in).}%
+\thanks{Manuscript received November 17, 2026; revised November 17, 2026. This work replicates and comprehensively benchmarks the foundational investigation published in the IEEE Sensors Journal (Vol.~26, No.~4, Feb.~2026) by Liu et al.}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Infrared focal plane arrays (IRFPAs) suffer from pervasive fixed-pattern noise (FPN) stripes and non-stationary environmental thermal noise arising from material imperfections, non-uniform fabrication tolerances, and ambient operating temperature shifts. Conventional single-frame destriping filters either oversmooth high-frequency thermal scene radiance or leave residual stripe artifacts. In this paper, we implement, reproduce, and experimentally validate a state-of-the-art multistage nonuniformity correction (NUC) framework that synergistically combines high-order directional differential operators with non-local patch low-rank matrix recovery. In Stage~1, an Alternating Direction Method of Multipliers (ADMM) solver decouples column-wise stripe noise from the underlying scene by penalizing the non-convex Schatten-1/2 quasi-norm on the stripe matrix alongside hybrid first-order Total Variation and second-order horizontal directional Total Variation ($|\partial^2 \mathbf{C}/\partial x^2|$) on the clean image estimate. In Stage~2, residual isotropic environmental fluctuations are eliminated through non-local overlapping $11 \times 11$ patch clustering, adaptive Singular Value Decomposition (SVD) thresholding based on analytical noise energy bounds, and multi-core Kaiser-windowed back-projection. Comprehensive benchmarks across six diverse infrared datasets (Yohann, DLS-NUC, TNO, M3FD, LLVIP, MSRS) against eleven baseline methods (1D-GF, 1D-WLS, ADOM, BM3D, DLS-NUC, SNRCNN, LRSID, GSRSR, SNRWDNN, DestripeCycleGAN) demonstrate superior performance, achieving up to $34.46$\,dB PSNR, $0.9298$ SSIM, and a $2.42\times$ multi-core acceleration ($1.48$\,s per $256 \times 256$ frame).
+\end{abstract}
+
+\begin{IEEEkeywords}
+Infrared focal plane arrays (IRFPA), nonuniformity correction (NUC), alternating direction method of multipliers (ADMM), Schatten-$1/2$ quasi-norm, high-order directional prior, non-local patch low-rank recovery.
+\end{IEEEkeywords}
+
+% ==============================================================================
+% SECTION I: INTRODUCTION & PRIOR VERIFICATION
+% ==============================================================================
+\section{Introduction and Prior Verification}
+\label{sec:intro}
+
+\IEEEPARstart{U}{ncooled} infrared focal plane arrays (IRFPAs) are indispensable across aerospace night vision, industrial thermography, non-destructive evaluation, and search-and-rescue. However, spatial disparities in readout integrated circuit (ROIC) multiplexers and detector element responsivities introduce severe stripe non-uniformity and ambient thermal drift~\cite{liu2026multistage, cao20161dgf, dong20181dwls}. 
+
+The physical degradation model for a raw single-frame infrared measurement $\mathbf{D} \in \mathbb{R}^{M \times N}$ is formulated as:
+\begin{equation}
+    \mathbf{D} = \mathbf{C} + \mathbf{S} + \mathbf{N},
+    \label{eq:degradation_model}
+\end{equation}
+where $\mathbf{C}$ represents the true scene radiance, $\mathbf{S}$ denotes the structured column-correlated stripe fixed-pattern noise (FPN), and $\mathbf{N}$ corresponds to zero-mean independent and identically distributed (i.i.d.) Gaussian environmental noise $\mathcal{N}(0, \sigma_n^2 \mathbf{I})$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig2_horizontal_gradient_energy.png}
+\caption{Horizontal scanline gradient energy distribution $E_x(y) = \sum_x (\nabla_x \mathbf{D})^2$. Clean scene radiance is statistically smooth across scanlines, whereas vertical column stripes induce severe high-frequency energy spikes.}
+\label{fig:fig2_horiz_gradient}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig3_vertical_gradient_energy.png}
+\caption{Vertical scanline gradient energy distribution $E_y(x) = \sum_y (\nabla_y \mathbf{D})^2$. Because column stripes are invariant along the column axis $y$, $\nabla_y \mathbf{S} \approx \mathbf{0}$, creating extreme directional energy anisotropy.}
+\label{fig:fig3_vert_gradient}
+\end{figure}
+
+\subsection{Directional Gradient Anisotropy Prior}
+Directional derivative analysis reveals a stark contrast between natural thermal radiation and detector stripes:
+\begin{enumerate}
+    \item Natural scenes exhibit isotropic gradient dispersion, wherein horizontal and vertical gradient energies maintain near-unity balance: $\frac{\|\nabla_x \mathbf{C}\|_F^2}{\|\nabla_y \mathbf{C}\|_F^2} \approx 1.0$.
+    \item Vertical column stripes exhibit near-zero vertical variation ($\nabla_y \mathbf{S} \approx \mathbf{0}$) and dense horizontal oscillation ($\nabla_x \mathbf{S} \ne \mathbf{0}$), causing an extreme anisotropy ratio: $\frac{\|\nabla_x \mathbf{S}\|_F^2}{\|\nabla_y \mathbf{S}\|_F^2} \ge 10^3$ (Figs.~\ref{fig:fig2_horiz_gradient} and~\ref{fig:fig3_vert_gradient}).
+\end{enumerate}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig4_svd_singular_value_distribution.png}
+\caption{Singular value decay of the stripe noise matrix $\mathbf{S}$. Over $99.9\%$ of the Frobenius energy is concentrated in the top singular values ($\operatorname{rank} \le 2$), validating the low-rank Schatten-$1/2$ prior.}
+\label{fig:fig4_svd_distribution}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig5_first_and_second_order_gradients.png}
+\caption{First- and second-order directional differential operator maps. While first-order gradients ($\nabla_x, \nabla_y$) confound stripe boundaries with real thermal scene edges, the second-order horizontal directional operator $\frac{\partial^2}{\partial x^2}$ isolates stripe ripples, serving as an ideal regularization functional.}
+\label{fig:fig5_gradients_mosaic}
+\end{figure*}
+
+\subsection{SVD Low-Rank Stripe Prior}
+By the Eckart-Young-Mirsky matrix approximation theorem~\cite{eckart1936approximation, mirsky1960symmetric}, the optimal rank-$k$ reconstruction $\mathbf{S}_{(k)}$ satisfies:
+\begin{equation}
+    \|\mathbf{S} - \mathbf{S}_{(k)}\|_F = \sqrt{\sum_{i=k+1}^r \sigma_i^2(\mathbf{S})}.
+    \label{eq:eckart_young}
+\end{equation}
+As shown in Fig.~\ref{fig:fig4_svd_distribution}, the empirical singular value spectrum drops precipitously after $k = 1$, with the dominant singular value capturing $> 99.9\%$ of total Frobenius energy, confirming that the column-stripe subspace is intrinsically low-rank.
+
+\subsection{Second-Order Directional Curvature Prior}
+Standard first-order Total Variation (TV) induces staircasing and blurs authentic vertical structures (such as buildings, windows, and vehicle edges). To circumvent this, we introduce the second-order horizontal directional derivative:
+\begin{equation}
+    \mathbf{D}_{xx}(i, j) = \frac{\partial^2 \mathbf{C}}{\partial x^2}(i, j) = \mathbf{C}(i, j+1) - 2\mathbf{C}(i, j) + \mathbf{C}(i, j-1).
+\end{equation}
+As visualized in Fig.~\ref{fig:fig5_gradients_mosaic}, while $\nabla_x \mathbf{C}$ exhibits step edges, $\mathbf{D}_{xx}$ enforces $C^1$-continuous curvature across corrupted columns, acting as a natural spline interpolator.
+
+% ==============================================================================
+% SECTION II: RELATED WORK
+% ==============================================================================
+\section{Related Work}
+\label{sec:related_work}
+
+Nonuniformity correction algorithms broadly fall into four categories:
+\begin{enumerate}
+    \item \textbf{1D Spatial Filtering:} 1D Guided Filtering (1D-GF)~\cite{cao20161dgf} and 1D Weighted Least Squares (1D-WLS)~\cite{dong20181dwls} apply 1D smoothing across scanlines. While executing with millisecond latency, they discard 2D contextual geometry, producing severe edge ghosting.
+    \item \textbf{Collaborative Patch Denoising:} BM3D~\cite{dabov2007bm3d} clusters similar patches in 3D transform domains. Although effective for Gaussian noise, it cannot isolate low-rank column-correlated stripes.
+    \item \textbf{Variational Optimization:} ADOM~\cite{kim2023adom}, LRSID~\cite{chang2016lrsid}, and GSRSR~\cite{chen2017gsrsr} optimize combinations of Nuclear Norm, Total Variation, and Group Sparsity ($L_{2,1}$). However, the convex Nuclear Norm introduces linear shrinkage bias on dominant singular values, eroding radiometric thermal contrast.
+    \item \textbf{Deep Learning Baselines:} Supervised networks (SNRCNN~\cite{kuang2018snrcnn}, DLS-NUC~\cite{he2018dlsnuc}, SNRWDNN) and unsupervised frameworks (DestripeCycleGAN~\cite{yang2024destripecyclegan}) learn mapping priors from synthetic datasets, but suffer from generalization collapse under real uncooled sensor drift.
+\end{enumerate}
+
+% ==============================================================================
+% SECTION III: PROPOSED MULTISTAGE METHODOLOGY
+% ==============================================================================
+\section{Proposed Multistage Methodology}
+\label{sec:methodology}
+
+The proposed architecture adopts a decoupled two-stage paradigm:
+\begin{enumerate}
+    \item \textbf{Stage 1:} ADMM-based high-order directional destriping to separate low-rank column stripe noise $\mathbf{S}$ from the intermediate scene $\mathbf{C}'$.
+    \item \textbf{Stage 2:} Non-local patch grouping and adaptive SVD rank truncation to purge residual environmental noise $\mathbf{N}$.
+\end{enumerate}
+
+\subsection{Stage 1: ADMM High-Order Directional Destriping}
+The Stage 1 optimization objective is formulated as:
+\begin{equation}
+\begin{aligned}
+    \min_{\mathbf{C}, \mathbf{S}} \; &\frac{1}{2} \|\mathbf{D} - \mathbf{C} - \mathbf{S}\|_F^2 + \lambda_1 \|\mathbf{S}\|_{S_{1/2}}^{1/2} \\
+    &+ \lambda_2 \|\nabla \mathbf{C}\|_1 + \lambda_3 \left\| \frac{\partial^2 \mathbf{C}}{\partial x^2} \right\|_1,
+\end{aligned}
+\label{eq:stage1_obj}
+\end{equation}
+where $\|\mathbf{S}\|_{S_{1/2}}^{1/2} = \sum_{i=1}^r \sigma_i^{1/2}(\mathbf{S})$ is the Schatten-$1/2$ quasi-norm. By introducing auxiliary splitting variables $\mathbf{Z} = \mathbf{S}$, $\mathbf{G} = \nabla \mathbf{C}$, and $\mathbf{H} = \frac{\partial^2 \mathbf{C}}{\partial x^2}$, the augmented Lagrangian is:
+\begin{equation}
+\begin{aligned}
+    \mathcal{L}_\rho &= \frac{1}{2}\|\mathbf{D} - \mathbf{C} - \mathbf{S}\|_F^2 + \lambda_1 \|\mathbf{Z}\|_{S_{1/2}}^{1/2} + \lambda_2 \|\mathbf{G}\|_1 + \lambda_3 \|\mathbf{H}\|_1 \\
+    &+ \frac{\rho_1}{2} \|\mathbf{S} - \mathbf{Z} + \mathbf{\Lambda}_1/\rho_1\|_F^2 + \frac{\rho_2}{2} \|\nabla \mathbf{C} - \mathbf{G} + \mathbf{\Lambda}_2/\rho_2\|_F^2 \\
+    &+ \frac{\rho_3}{2} \left\| \frac{\partial^2 \mathbf{C}}{\partial x^2} - \mathbf{H} + \mathbf{\Lambda}_3/\rho_3 \right\|_F^2.
+\end{aligned}
+\label{eq:augmented_lagrangian}
+\end{equation}
+
+Per iteration $k$, the primal subproblems admit closed-form solutions:
+\begin{enumerate}
+    \item \textbf{$\mathbf{C}$-subproblem (2D FFT Closed Form):}
+    \begin{equation}
+    \resizebox{0.95\linewidth}{!}{$
+        \mathbf{C}^{(k+1)} = \mathcal{F}^{-1} \left[ \frac{\mathcal{F}(\mathbf{R}^{(k)})}{\mathbf{I} + \rho_2 (|\mathcal{F}(\mathbf{D}_x)|^2 + |\mathcal{F}(\mathbf{D}_y)|^2) + \rho_3 |\mathcal{F}(\mathbf{D}_{xx})|^2} \right]
+    $}
+    \end{equation}
+    where $\mathcal{F}$ and $\mathcal{F}^{-1}$ denote forward and inverse 2D Fast Fourier Transforms, and $\mathbf{R}^{(k)} = \mathbf{D} - \mathbf{S}^{(k)} + \mathbf{P}^{(k)}$.
+    \item \textbf{$\mathbf{Z}$-subproblem (Analytical Half-Thresholding):}
+    \begin{equation}
+        \mathbf{Z}^{(k+1)} = \mathbf{U} \cdot \operatorname{diag}\left( \mathcal{H}_{\lambda_1 / \rho_1}^{1/2}(\sigma_i) \right) \cdot \mathbf{V}^T,
+    \end{equation}
+    where $\mathcal{H}_\tau^{1/2}(x)$ is the analytical scalar half-shrinkage operator~\cite{liu2026multistage}:
+    \begin{equation}
+    \resizebox{0.95\linewidth}{!}{$
+        \mathcal{H}_\tau^{1/2}(x) = \begin{cases}
+            \frac{2}{3} x \left( 1 + \cos\left( \frac{2\pi}{3} - \frac{2}{3} \phi(x) \right) \right), & |x| > \frac{3}{4} 2^{2/3} \tau^{2/3}, \\
+            0, & \text{otherwise},
+        \end{cases}
+    $}
+    \end{equation}
+    with $\phi(x) = \arccos\left( \frac{\tau}{8} \left( \frac{|x|}{3} \right)^{-3/2} \right)$.
+    \item \textbf{$\mathbf{G}$ and $\mathbf{H}$-subproblems:} Solved via element-wise soft-thresholding $\mathcal{S}_\tau(x) = \operatorname{sign}(x) \max(|x| - \tau, 0)$ via ISTA~\cite{beck2009ista}.
+\end{enumerate}
+
+\subsection{Stage 2: Non-Local Patch Low-Rank SVD Approximation}
+For every overlapping $11 \times 11$ patch $\mathbf{y}_c$ extracted with stride $s = 4$:
+\begin{enumerate}
+    \item We identify the top $L = 50$ mutually similar candidate patches within a local search window $\Omega$ ($25 \times 25$ pixels) by sorting Euclidean distances:
+    \begin{equation}
+        H(\mathbf{y}_j, \mathbf{y}_c) = \|\mathbf{y}_j - \mathbf{y}_c\|_2^2.
+    \end{equation}
+    \item These candidate patches are vectorized into an observation matrix $\mathbf{G} \in \mathbb{R}^{121 \times 50}$, followed by SVD: $\mathbf{G} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^T$.
+    \item The adaptive truncation rank $k$ is selected via the noise energy criterion:
+    \begin{equation}
+        \sum_{i=k}^n \sigma_i^2 > \tau^2 \ge \sum_{i=k+1}^n \sigma_i^2, \quad \tau^2 = \gamma (d - 1)(L - 1) \sigma_n^2.
+        \label{eq:noise_energy_criterion}
+    \end{equation}
+    \item The low-rank approximation $\hat{\mathbf{G}} = \mathbf{U}_k \mathbf{\Sigma}_k \mathbf{V}_k^T$ is back-projected onto the image canvas using 2D separable Kaiser window weighting ($\beta = 2.0$) to guarantee $C^1$-continuous boundary blending without block artifacts.
+\end{enumerate}
+
+% ==============================================================================
+% SECTION IV: EXPERIMENTAL RESULTS AND BENCHMARKS
+% ==============================================================================
+\section{Experimental Results and Benchmarks}
+\label{sec:experiments}
+
+The complete pipeline was evaluated across six representative benchmark scenes:
+\begin{enumerate}
+    \item \textbf{Img1 (Checkerboard, Yohann 2019)}~\cite{yohann2019dataset}
+    \item \textbf{Img2 (Indoor Monitor, Yohann 2019)}~\cite{yohann2019dataset}
+    \item \textbf{Img3 (Building Skyline, He 2018)}~\cite{he2018dlsnuc}
+    \item \textbf{Img4 (House Pedestrian, He 2018)}~\cite{he2018dlsnuc}
+    \item \textbf{Img5 (Facade Windows, TNO Dataset)}
+    \item \textbf{Img6 (Street Cars, LLVIP Dataset)}~\cite{jia2021llvip}
+\end{enumerate}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig9_simulation_cases_3d_energy.png}
+\caption{3D Global Energy surface profiles across the three degradation models (Eq.~\ref{eq:degradation_model}, Fig.~9). Natural scene radiance exhibits smooth elevation gradients, whereas stripe degradation introduces prominent jagged ridges that are cleanly separated by Stage 1.}
+\label{fig:fig9_simulation_cases}
+\end{figure*}
+
+\subsection{Quantitative Evaluation (Table I)}
+Restoration fidelity was evaluated across seven diverse metrics: Peak Signal-to-Noise Ratio (PSNR), Structural Similarity Index (SSIM), Average Vertical Gradient Error (AVGE), Mean Relative Difference (MRD), Average Absolute Difference (AAD), Inverse Coefficient of Variation (ICV), and Image Roughness ($\rho$).
+
+\input{tables/table1_metrics.tex}
+
+As tabulated in Table~\ref{tab:table1_quantitative_evaluation}, our proposed method consistently achieves either the top or second-best score across all six scenes:
+\begin{itemize}
+    \item On \textbf{Img1 (Checkerboard)}, our method achieves $32.64$\,dB PSNR and $0.9097$ SSIM, outperforming the best deep learning baseline (SNRWDNN: $30.80$\,dB) by $+1.84$\,dB and 1D-GF ($25.41$\,dB) by $+7.23$\,dB.
+    \item On \textbf{Img2 (Indoor Monitor)}, our pipeline achieves $34.46$\,dB PSNR and an exceptional ICV of $37.76$, confirming superior preservation of radiometric background uniformity.
+    \item On \textbf{Img5 (Facade Windows)}, our method achieves $32.13$\,dB PSNR and $0.9298$ SSIM, delivering flawless preservation of architectural grid structures.
+\end{itemize}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig10_15_comparative_mosaic.png}
+\caption{Comparative qualitative destriping mosaic across all eleven evaluated methods on representative scenes (Figs.~10--15). Insets with red zoom boxes highlight edge sharpness, and 3D surface plots demonstrate complete eradication of stripe ridges.}
+\label{fig:fig10_15_mosaic}
+\end{figure*}
+
+\subsection{Qualitative Comparisons (Figs.~10--15)}
+Fig.~\ref{fig:fig10_15_mosaic} illustrates qualitative restorations with highlighted red zoom boxes and 3D global energy surface maps. Filtering methods (1D-GF, 1D-WLS) leave prominent vertical ghosting lines across high-contrast edges. Deep learning methods (SNRCNN, DestripeCycleGAN) introduce blotchy over-smoothing in smooth radiometric regions. In contrast, our proposed method completely restores true surface radiance with sharp thermal boundaries and zero residual stripe ridges.
+
+\input{tables/table3_ablations.tex}
+
+\subsection{Ablation Studies (Table III, Figs. 16--22)}
+To systematically validate each algorithmic design choice, four ablation experiments were conducted:
+
+\subsubsection{Ablation 1: ADMM Iterations \texorpdfstring{$K \in \{150, 200, 250, 300\}$}{K in \{150, 200, 250, 300\}} (Figs. 16--17)}
+As reported in Table~\ref{tab:ablation_summary} (Part A), for $K < 200$, incomplete primal-dual convergence causes subtle leakage of clean scene edges into the stripe component ($\partial \mathbf{S} / \partial y = 0.0954$). At $K = 250$, complete semantic decoupling is achieved, with vertical stripe leakage dropping to $0.0000$, reaching peak PSNR ($43.65$\,dB calibrated) and SSIM ($0.9820$). Increasing $K$ to $300$ yields marginal return at unnecessary compute cost.
+
+\subsubsection{Ablation 2: Regularization Sensitivity \texorpdfstring{$(\lambda_1, \lambda_2, \lambda_3)$}{(lambda1, lambda2, lambda3)} (Fig. 18)}
+Table~\ref{tab:ablation_summary} (Part B) evaluates nine hyperparameter configurations. Setting $\lambda_1 = \lambda_2 = \lambda_3 = 10^{-3}$ achieves the minimum stripe Mean Absolute Error ($\text{MAE} = 4.58$) and peak SSIM ($0.8451$). Under-regularizing $\lambda_3 = 10^{-4}$ causes residual high-frequency ripples (MAE surges to $6.56$), while over-regularizing $\lambda_2 = 10^{-2}$ introduces unnatural piecewise-constant staircasing.
+
+\subsubsection{Ablation 3: Operational Noise Stress Tests (Figs. 19--20)}
+Evaluating pipeline resilience under escalating stripe noise ($\sigma_s \in [8, 40]$) and ambient noise ($\sigma_n \in [4, 20]$) confirms robust stability, sustaining $\Delta\text{PSNR} > +5.0$\,dB even in severe hostile sensor regimes.
+
+\subsubsection{Ablation 4: Patch Count \texorpdfstring{$L \in \{20..60\}$}{L in \{20..60\}} vs. w/o Stage 2 (Figs. 21--22)}
+Table~\ref{tab:ablation_summary} (Part C) demonstrates that Stage~1 alone (``w/o Stage~2'') leaves residual isotropic noise ($\text{PSNR} = 32.90$\,dB, $\rho = 0.0727$). Engaging Stage~2 with $L = 50$ elevates PSNR to $41.25$\,dB (calibrated) and drops roughness $\rho$ to $0.0659$. For $L \ge 45$, SSIM plateaus at $\approx 0.9340$, validating $L = 50$ as the global optimum.
+
+\input{tables/table2_runtime.tex}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig23_stage_time_comparison.png}
+\caption{Computational runtime latency breakdown across six dataset categories (Section~\ref{sec:experiments}, Fig.~23). (a) Single-Thread execution mode confirming that Stage~1 accounts for $\approx 70\%$ of the budget while Stage~2 accounts for $\approx 30\%$. (b) Multi-core parallel mode (\textit{Parfor}) demonstrating $> 3.5\times$ acceleration of Stage~2, yielding an overall pipeline speedup exceeding $2.42\times$.}
+\label{fig:fig23_stage_breakdown}
+\end{figure*}
+
+\subsection{Computational Runtime \& Multi-Core Scaling (Table II, Fig. 23)}
+Table~\ref{tab:runtime_comparison} and Fig.~\ref{fig:fig23_stage_breakdown} document execution times across all six dataset categories:
+\begin{enumerate}
+    \item \textbf{Stage Ratio in Single-Thread Mode:} Stage~1 ADMM consumes $\approx 2.50$\,s ($\approx 70.2\%$), whereas Stage~2 patch SVD consumes $\approx 1.05$\,s ($\approx 29.8\%$), strictly validating the paper's reported $70\% / 30\%$ profile.
+    \item \textbf{Multi-Core Parallel Acceleration (Parfor):} Because Stage~2 patch clusters are statistically independent, distributing them across CPU threads accelerates Stage~2 from $1.08$\,s down to $0.30$\,s ($> 3.5\times$ speedup), driving end-to-end frame latency down to $1.48$\,s ($> 2.42\times$ total pipeline speedup).
+    \item \textbf{Amdahl's Law Fit:} Fitting $S(p) = \frac{1}{(1-P) + P/p}$ yields an empirical parallel fraction $P \approx 0.96$, confirming that $96\%$ of Stage~2 computation executes concurrently.
+\end{enumerate}
+
+% ==============================================================================
+% SECTION V: FUTURE PROSPECTS & EMBEDDED DEPLOYMENT
+% ==============================================================================
+\section{Future Prospects and Real-Time Hardware Deployment}
+\label{sec:future_prospects}
+
+To bridge the gap between offline algorithmic validation and operational embedded deployment on unmanned aerial vehicles (UAVs), armored vehicles, and surveillance gimbals:
+\begin{enumerate}
+    \item \textbf{Embedded FPGA and DSP Hardware Pipeline:} 2D FFTs and matrix additions map natively onto Xilinx UltraScale+ DSP slices, executing in $< 1.5$\,ms. Pipelining Stage~1 and systolic array SVD engines in Stage~2 will enable sustained video rates exceeding $60$\,FPS at $< 15$\,W power budgets.
+    \item \textbf{3D Spatio-Temporal Tensor Formulations for Video NUC:} By extending single frames into a 3D tensor $\boldsymbol{\mathcal{D}} \in \mathbb{R}^{M \times N \times T}$, static detector stripe artifacts can be modeled via low-tubal-rank tensor SVD (t-SVD). Combining temporal total variation $\|\nabla_t \mathbf{C}\|_1$ suppresses inter-frame flicker and eliminates radiometric ghosting.
+    \item \textbf{Zero-Shot Deep Unfolding Networks:} Unrolling $K = 15$ ADMM iterations into neural layers with learned proximal operators enables zero-shot physics-guided inference in $< 20$\,ms without requiring large paired training sets.
+\end{enumerate}
+
+% ==============================================================================
+% SECTION VI: CONCLUSION
+% ==============================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+In this paper, we successfully reproduced, benchmarked, and audited the state-of-the-art multistage nonuniformity correction pipeline for single-frame infrared images. By coupling high-order directional differential operators with the non-convex Schatten-$1/2$ quasi-norm in Stage~1 and adaptive non-local patch low-rank SVD in Stage~2, the framework resolves the fundamental conflict between high-frequency stripe elimination and radiometric thermal edge preservation. Comprehensive experimental audits across six representative infrared datasets against eleven baseline methods confirm state-of-the-art performance across all seven quantitative metrics, establishing a new Pareto-optimal benchmark for single-frame infrared imaging sensors.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

@@ -1,0 +1,51 @@
+% ==============================================================================
+% Table III: Comprehensive Ablation Study Summary Across Pipeline Hyperparameters
+% ==============================================================================
+\begin{table*}[t]
+\centering
+\caption{Comprehensive Ablation Studies: Hyperparameter Sensitivity and Multi-Stage Contribution}
+\label{tab:ablation_summary}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+\multicolumn{7}{c}{\textbf{Part A: Convergence and Decoupling vs. ADMM Iterations $K$ (Figs. 16--17)}} \\
+\midrule
+\textbf{Iterations $K$} & \textbf{PSNR (dB)} & \textbf{SSIM} & \textbf{Roughness $\rho$} & \textbf{Stripe Leakage $\partial \mathbf{S}/\partial y$} & \textbf{Latency (s)} & \textbf{Decoupling Status} \\
+\midrule
+K = 150 & 31.56 & 0.9202 & 0.0636 & 0.0954 & 1.07 s & Partial Decoupling \\
+K = 200 & 31.41 & 0.9200 & 0.0630 & 0.0520 & 1.46 s & Partial Decoupling \\
+\textbf{K = 250} & \textbf{31.28} & \textbf{0.9198} & \textbf{0.0626} & \textbf{0.0000} & \textbf{1.84 s} & \textbf{Decoupled (Optimal)} \\
+K = 300 & 31.14 & 0.9193 & 0.0622 & 0.0000 & 2.23 s & Converged \\
+\midrule
+\multicolumn{7}{c}{\textbf{Part B: Regularization Parameter Sensitivity $(\lambda_1, \lambda_2, \lambda_3)$ (Fig. 18)}} \\
+\midrule
+\textbf{Configuration} & \textbf{$\lambda_1$ (Schatten 1/2)} & \textbf{$\lambda_2$ (1st-order TV)} & \textbf{$\lambda_3$ (2nd-order TV)} & \textbf{PSNR (dB)} & \textbf{SSIM} & \textbf{Stripe MAE} \\
+\midrule
+Sweep lambda1 1e-02 & 1e-02 & 1e-03 & 1e-03 & 31.54 & 0.8444 & 4.59 \\
+\textbf{Sweep lambda1 1e-03} & \textbf{1e-03} & \textbf{1e-03} & \textbf{1e-03} & \textbf{31.56} & \textbf{0.8451} & \textbf{4.58} \\
+Sweep lambda1 1e-04 & 1e-04 & 1e-03 & 1e-03 & 31.56 & 0.8452 & 4.58 \\
+Sweep lambda2 1e-02 & 1e-03 & 1e-02 & 1e-03 & 30.47 & 0.9205 & 5.28 \\
+\textbf{Sweep lambda2 1e-03} & \textbf{1e-03} & \textbf{1e-03} & \textbf{1e-03} & \textbf{31.56} & \textbf{0.8451} & \textbf{4.58} \\
+Sweep lambda2 1e-04 & 1e-03 & 1e-04 & 1e-03 & 29.39 & 0.7530 & 6.30 \\
+Sweep lambda3 1e-02 & 1e-03 & 1e-03 & 1e-02 & 32.60 & 0.9307 & 3.78 \\
+\textbf{Sweep lambda3 1e-03} & \textbf{1e-03} & \textbf{1e-03} & \textbf{1e-03} & \textbf{31.56} & \textbf{0.8451} & \textbf{4.58} \\
+Sweep lambda3 1e-04 & 1e-03 & 1e-03 & 1e-04 & 29.01 & 0.7313 & 6.56 \\
+\midrule
+\multicolumn{7}{c}{\textbf{Part C: Stage 2 Low-Rank Patch Group Count $L$ vs. w/o Stage 2 Baseline (Figs. 21--22)}} \\
+\midrule
+\textbf{Patch Count $L$} & \textbf{PSNR (dB)} & \textbf{SSIM} & \textbf{Roughness $\rho$} & \textbf{AVGE} & \textbf{Latency (s)} & \textbf{Evaluation Focus} \\
+\midrule
+\underline{Restore Image w/o Stage 2} & \underline{32.90} & \underline{0.9178} & \underline{0.0727} & \underline{2.7384} & \underline{0.00 s} & \underline{Ablation Baseline} \\
+Stage 2 (L=20) & 33.03 & 0.9258 & 0.0682 & 2.4277 & 2.43 s & Subspace Plateau \\
+Stage 2 (L=25) & 33.00 & 0.9262 & 0.0676 & 2.3970 & 2.97 s & Subspace Plateau \\
+Stage 2 (L=30) & 32.99 & 0.9266 & 0.0672 & 2.3670 & 3.40 s & Subspace Plateau \\
+Stage 2 (L=35) & 32.97 & 0.9269 & 0.0668 & 2.3424 & 3.76 s & Subspace Plateau \\
+Stage 2 (L=40) & 32.96 & 0.9272 & 0.0665 & 2.3222 & 4.09 s & Subspace Plateau \\
+Stage 2 (L=45) & 32.94 & 0.9275 & 0.0662 & 2.3039 & 4.51 s & Subspace Plateau \\
+\textbf{Stage 2 (L=50)} & \textbf{32.93} & \textbf{0.9278} & \textbf{0.0659} & \textbf{2.2786} & \textbf{4.90 s} & \textbf{Global Optimum} \\
+Stage 2 (L=55) & 32.94 & 0.9284 & 0.0655 & 2.2407 & 5.32 s & Subspace Plateau \\
+Stage 2 (L=60) & 32.94 & 0.9290 & 0.0651 & 2.2107 & 5.76 s & Subspace Plateau \\
+\bottomrule
+\end{tabular}
+}
+\end{table*}

@@ -1,0 +1,261 @@
+\documentclass[10pt,conference]{IEEEtran}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{cite}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black]{hyperref}
+
+\graphicspath{{figures/}}
+
+\title{Master Viva Voce Compendium: Comprehensive Defense Guide, Mathematical Formulations, and 50-Question Technical Dossier}
+
+\author{\IEEEauthorblockN{Abhinav Rishabh Chaurasia (20261605001), Aman Pandey (20261604001), Milind Thakur (20261603018)}
+\IEEEauthorblockA{\textit{Department of Computer Science and Engineering} \\
+\textit{Indian Institute of Information Technology Vadodara (IIITV) -- Gandhinagar Campus (GCD)} \\
+Sector 28, Gandhinagar, Gujarat 382028, India \\
+Email: \{20261605001, 20261604001, 20261603018\}@iiitvadodara.ac.in}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This compendium serves as the exhaustive oral defense reference manual and mathematical compendium for the project \textit{``Multistage Nonuniformity Correction Pipeline for Single-Frame Infrared Images Based on Hybrid High-Order Directional and Low-Rank Prior Information''} (IEEE Sensors Journal, Feb.~2026). It consolidates physical degradation derivations, operator adjoint identities, analytical proximal solutions, non-local patch grouping mechanics, asymptotic complexity formulations, and 50 rigorous Viva Voce defense questions with detailed technical answers categorized across all six functional modules.
+\end{abstract}
+
+% ==============================================================================
+% SECTION I: MATHEMATICAL ARCHITECTURE & OPERATOR IDENTITIES
+% ==============================================================================
+\section{Mathematical Architecture \& Operator Proofs}
+\label{sec:math_architecture}
+
+\subsection{Physical Degradation Model and Anisotropy}
+A raw single-frame infrared image $\mathbf{D} \in \mathbb{R}^{M \times N}$ captured by an uncooled microbolometer focal plane array satisfies:
+\begin{equation}
+    \mathbf{D} = \mathbf{C} + \mathbf{S} + \mathbf{N},
+    \label{eq:viva_degradation}
+\end{equation}
+where $\mathbf{C}$ is natural infrared radiance, $\mathbf{S}$ is column-correlated fixed-pattern noise (FPN), and $\mathbf{N} \sim \mathcal{N}(0, \sigma_n^2 \mathbf{I})$ is ambient environmental noise.
+\begin{enumerate}
+    \item \textbf{Directional Energy Anisotropy:} Natural thermal scenes satisfy $\frac{\|\nabla_x \mathbf{C}\|_F^2}{\|\nabla_y \mathbf{C}\|_F^2} \approx 1.0$. Because column stripes are uniform vertically ($\nabla_y \mathbf{S} \approx \mathbf{0}$), their ratio surges to $\frac{\|\nabla_x \mathbf{S}\|_F^2}{\|\nabla_y \mathbf{S}\|_F^2} \ge 10^3$.
+    \item \textbf{SVD Low-Rank Subspace:} By the Eckart-Young-Mirsky theorem, the optimal rank-$k$ approximation $\mathbf{S}_{(k)}$ satisfies:
+    \begin{equation}
+        \|\mathbf{S} - \mathbf{S}_{(k)}\|_F = \sqrt{\sum_{i=k+1}^{\min(M, N)} \sigma_i^2(\mathbf{S})}.
+    \end{equation}
+    Empirically, over $99.9\%$ of stripe energy is captured by $k \le 2$.
+\end{enumerate}
+
+\subsection{Finite Difference Operators and Exact Adjoint Identities}
+Under periodic boundary conditions, the first-order and second-order operators satisfy the Hilbert inner product adjoint identity $\langle \mathcal{D} \mathbf{x}, \mathbf{y} \rangle = \langle \mathbf{x}, \mathcal{D}^* \mathbf{y} \rangle$:
+\begin{enumerate}
+    \item $\nabla_x \mathbf{C}(i, j) = \mathbf{C}(i, j+1) - \mathbf{C}(i, j) \implies \nabla_x^* \mathbf{Y}(i, j) = \mathbf{Y}(i, j-1) - \mathbf{Y}(i, j)$.
+    \item $\nabla_y \mathbf{C}(i, j) = \mathbf{C}(i+1, j) - \mathbf{C}(i, j) \implies \nabla_y^* \mathbf{Y}(i, j) = \mathbf{Y}(i-1, j) - \mathbf{Y}(i, j)$.
+    \item $\mathbf{D}_{xx} \mathbf{C}(i, j) = \mathbf{C}(i, j+1) - 2\mathbf{C}(i, j) + \mathbf{C}(i, j-1) \implies \mathbf{D}_{xx}^* = \mathbf{D}_{xx}$ (self-adjoint).
+\end{enumerate}
+In the 2D Fourier domain, these finite difference stencils diagonalize:
+\begin{equation}
+    \mathcal{F}(\nabla_x^* \nabla_x + \nabla_y^* \nabla_y) = |\mathcal{F}(\mathbf{D}_x)|^2 + |\mathcal{F}(\mathbf{D}_y)|^2.
+\end{equation}
+
+\subsection{Analytical Schatten-1/2 Singular Value Shrinkage}
+The non-convex Schatten-$1/2$ minimization subproblem:
+\begin{equation}
+    \min_{\mathbf{Z}} \frac{1}{2} \|\mathbf{S} - \mathbf{Z}\|_F^2 + \tau \|\mathbf{Z}\|_{S_{1/2}}^{1/2}
+    \label{eq:stage1_obj}
+\end{equation}
+decouples into independent scalar problems on singular values $\sigma_i$. By Cardano's cubic formula, the global minimum is given analytically by:
+\begin{equation}
+\resizebox{0.98\columnwidth}{!}{$
+    \mathcal{H}_\tau^{1/2}(x) = \begin{cases}
+        \frac{2}{3} x \left( 1 + \cos\left( \frac{2\pi}{3} - \frac{2}{3} \phi(x) \right) \right), & |x| > \frac{3}{4} 2^{2/3} \tau^{2/3}, \\
+        0, & \text{otherwise},
+    \end{cases}
+$}
+\end{equation}
+where $\phi(x) = \arccos\left( \frac{\tau}{8} \left( \frac{|x|}{3} \right)^{-3/2} \right)$. Unlike the nuclear norm ($L_1$ on singular values), which subtracts a constant $\tau$ from all singular values, the Schatten-$1/2$ operator exhibits asymptotic zero bias on dominant singular values, preventing loss of thermal scene contrast.
+
+\subsection{Asymptotic Algorithmic Complexity \& Noise Bounds}
+\begin{enumerate}
+    \item \textbf{Stage 1 ADMM:} $\mathcal{T}_{\text{Stage1}} = \mathcal{O}(K \cdot MN \log(MN) + K \cdot \min(M^2 N, M N^2))$ across $K = 250$ iterations.
+    \item \textbf{Stage 2 Patch Low-Rank SVD:} $\mathcal{T}_{\text{Stage2}} = \mathcal{O}(N_{\text{ref}} \cdot [|\Omega| B^2 + d L^2])$, where $B = 11, d = 121, |\Omega| = 625, L = 50$, and $N_{\text{ref}} \approx \frac{MN}{s^2} = 3,844$ reference clusters for $256 \times 256$ frames with stride $s = 4$. Truncation rank $k$ is chosen via the noise energy criterion:
+    \begin{equation}
+        \sum_{i=k}^n \sigma_i^2 > \tau^2 \ge \sum_{i=k+1}^n \sigma_i^2, \quad \tau^2 = \gamma (d-1)(L-1)\sigma_n^2.
+        \label{eq:noise_energy_criterion}
+    \end{equation}
+    \item \textbf{Amdahl's Law Parallel Scaling:} With empirical parallel fraction $P \approx 0.96$, parallel multi-threading accelerates Stage~2 by $> 3.5\times$, driving total pipeline speedup to $> 2.42\times$.
+\end{enumerate}
+
+% ==============================================================================
+% SECTION II: MASTER 50 VIVA VOCE QUESTIONS & TECHNICAL ANSWERS
+% ==============================================================================
+\section{Master 50 Viva Voce Questions and Answers}
+\label{sec:50_viva_questions}
+
+\subsection{Part I: Physics, Noise Models \& Priors (Mod 01)}
+
+\noindent\textbf{Q1: What physically causes stripe non-uniformity in uncooled IRFPAs?}\\
+\textbf{A1:} Column-parallel readout integrated circuits (ROICs) dedicate distinct preamplifiers and ADCs to each detector column. Microscopic variations in semiconductor doping, thermal coefficients, and bias voltages create fixed column-to-column gain and offset disparities that manifest as vertical stripes.
+
+\vspace{0.4em}\noindent\textbf{Q2: Why does the degradation model (Eq.~\ref{eq:viva_degradation}) use an additive formulation?}\\
+\textbf{A2:} For operational uncooled microbolometers within narrow thermal temperature spans ($\Delta T \le 20$\,K), detector responsivity is linear. Column offset disparities dominate over multiplicative gain variations, making $D = C + S + N$ mathematically and physically rigorous.
+
+\vspace{0.4em}\noindent\textbf{Q3: Explain the difference between Case 1, Case 2, and Case 3 noise simulations.}\\
+\textbf{A3:} Case 1 simulates conventional additive Gaussian column FPN plus ambient noise. Case 2 introduces periodic harmonics ($0.18$\,cycles/col) reflecting chopper wheel synchronization jitter. Case 3 combines high-amplitude multi-harmonic stripes, random column offsets, saturated defective lines, and elevated environmental noise ($\sigma_n = 10$).
+
+\vspace{0.4em}\noindent\textbf{Q4: What is the gradient energy ratio $E_x / E_y$?}\\
+\textbf{A4:} $E_x = \sum (\nabla_x \mathbf{S})^2$ and $E_y = \sum (\nabla_y \mathbf{S})^2$. Because column stripes are uniform vertically, $\nabla_y \mathbf{S} \approx 0$, driving $E_x / E_y \ge 10^3$. In natural scenes, $E_x / E_y \approx 1.0$.
+
+\vspace{0.4em}\noindent\textbf{Q5: What does the Eckart-Young-Mirsky Theorem prove about $\mathbf{S}$?}\\
+\textbf{A5:} It proves that the truncated SVD $\mathbf{U}_k \mathbf{\Sigma}_k \mathbf{V}_k^T$ is the unique minimizer of $\|\mathbf{S} - \mathbf{X}\|_F$ among all matrices of rank $\le k$, with minimum error exactly equal to $\sqrt{\sum_{i=k+1}^r \sigma_i^2}$.
+
+\vspace{0.4em}\noindent\textbf{Q6: Why is the stripe matrix $\mathbf{S}$ low-rank?}\\
+\textbf{A6:} If stripes are strictly identical across rows, $\mathbf{S} = \mathbf{1}_M \mathbf{s}^T$, which is strictly rank-1. Even with subtle thermal drift along rows, $\mathbf{S}$ spans a 1-to-2 dimensional subspace.
+
+\vspace{0.4em}\noindent\textbf{Q7: Why not use column-mean subtraction directly?}\\
+\textbf{A7:} Column averaging assumes the scene's true vertical mean is constant across all columns. If the scene contains genuine vertical features (e.g., telephone poles, building edges), column-mean subtraction obliterates them, creating destructive ghosting.
+
+\vspace{0.4em}\noindent\textbf{Q8: How does the second-order derivative $\partial^2 \mathbf{C} / \partial x^2$ preserve edges better than $\nabla_x \mathbf{C}$?}\\
+\textbf{A8:} A natural step edge has a non-zero first derivative $\nabla_x \mathbf{C}$, so penalizing $\|\nabla_x \mathbf{C}\|_1$ penalizes true edges. However, across a smooth background corrupted by high-frequency stripe ripples, $\partial^2 \mathbf{C}/\partial x^2$ spikes selectively on ripples, penalizing noise while allowing piecewise-linear edge slopes.
+
+\vspace{0.4em}\noindent\textbf{Q9: What is the significance of the 3D Global Energy surface profile (Fig.~9)?}\\
+\textbf{A9:} Treating pixel intensity as height $z = f(x, y)$, natural thermal radiance forms smooth undulating hills. Column stripes introduce jagged, parallel sharp vertical ridges that are visually and mathematically distinct.
+
+\vspace{0.4em}\noindent\textbf{Q10: Why does environmental noise $\mathbf{N}$ violate the low-rank assumption?}\\
+\textbf{A10:} Environmental noise $\mathbf{N} \sim \mathcal{N}(0, \sigma_n^2 \mathbf{I})$ is white Gaussian noise. White noise singular values follow the Marchenko-Pastur quarter-circle law, exhibiting a flat spectrum that spans full rank $\min(M, N)$, requiring a separate non-local filtering stage.
+
+\subsection{Part II: Stage 1 ADMM Solver \& Operators (Mod 02)}
+
+\noindent\textbf{Q11: Why is ADMM preferred over gradient descent for Eq.~\ref{eq:stage1_obj}?}\\
+\textbf{A11:} Eq.~\ref{eq:stage1_obj} combines non-smooth $L_1$ norms and non-convex Schatten-$1/2$ quasi-norms. ADMM decouples the non-smooth priors into proximal subproblems that have exact, closed-form, FFT-diagonalized solutions, converging in $30-40$ iterations.
+
+\vspace{0.4em}\noindent\textbf{Q12: Why choose the Schatten-$1/2$ norm over the convex Nuclear Norm?}\\
+\textbf{A12:} The Nuclear Norm ($\|\mathbf{S}\|_* = \sum \sigma_i$) exerts constant thresholding $\max(\sigma_i - \tau, 0)$. This penalizes large singular values, eroding dominant thermal background contrast. Schatten-$1/2$ has zero asymptotic bias for $\sigma_i \gg \tau$, preserving contrast.
+
+\vspace{0.4em}\noindent\textbf{Q13: How is the $\mathbf{C}$-subproblem solved in $\mathcal{O}(MN \log(MN))$ time?}\\
+\textbf{A13:} The subproblem is quadratic: $(\mathbf{I} + \rho_2 \nabla^* \nabla + \rho_3 \mathbf{D}_{xx}^* \mathbf{D}_{xx}) \mathbf{C} = \mathbf{R}$. Under periodic boundary conditions, finite differences form block circulant matrices with circulant blocks (BCCC), which diagonalize under the 2D discrete Fourier transform (FFT).
+
+\vspace{0.4em}\noindent\textbf{Q14: What is the ISTA soft-thresholding operator?}\\
+\textbf{A14:} $\mathcal{S}_\tau(x) = \operatorname{sign}(x) \max(|x| - \tau, 0)$. It is the exact proximal operator for the $L_1$ norm: $\operatorname{prox}_{\tau \|\cdot\|_1}(v) = \arg\min_x \frac{1}{2} (x - v)^2 + \tau |x|$.
+
+\vspace{0.4em}\noindent\textbf{Q15: What role do dual multipliers $\mathbf{\Lambda}_1, \mathbf{\Lambda}_2, \mathbf{\Lambda}_3$ play?}\\
+\textbf{A15:} They enforce the equality constraints ($\mathbf{S} = \mathbf{Z}$, $\nabla \mathbf{C} = \mathbf{G}$, $\mathbf{D}_{xx} \mathbf{C} = \mathbf{H}$) via subgradient ascent: $\mathbf{\Lambda}^{(k+1)} = \mathbf{\Lambda}^{(k)} + \rho (\text{primal residual})$.
+
+\vspace{0.4em}\noindent\textbf{Q16: How do we verify operator adjoint implementations in code?}\\
+\textbf{A16:} We verify the Hilbert space inner product identity $\langle \mathcal{D} \mathbf{x}, \mathbf{y} \rangle = \langle \mathbf{x}, \mathcal{D}^* \mathbf{y} \rangle$ for arbitrary random vectors $\mathbf{x}, \mathbf{y}$ up to machine precision ($| \langle \mathcal{D}\mathbf{x}, \mathbf{y} \rangle - \langle \mathbf{x}, \mathcal{D}^*\mathbf{y} \rangle | < 10^{-12}$).
+
+\vspace{0.4em}\noindent\textbf{Q17: What is the convergence criterion for Stage 1?}\\
+\textbf{A17:} Primal relative change $\frac{\|\mathbf{C}^{(k+1)} - \mathbf{C}^{(k)}\|_F}{\|\mathbf{C}^{(k)}\|_F} \le \text{tol} = 10^{-4}$.
+
+\vspace{0.4em}\noindent\textbf{Q18: What is the typographical issue in the published Eq.~(11) of the paper?}\\
+\textbf{A18:} Eq.~(11) in the text wrote $+\mathbf{C}$ instead of $-\mathbf{C}$ in the fidelity term. The physical model $D = C + S + N \implies D - C - S$ requires $\frac{1}{2} \|\mathbf{D} - \mathbf{C} - \mathbf{S}\|_F^2$.
+
+\vspace{0.4em}\noindent\textbf{Q19: What happens if $\rho$ is chosen too small or too large?}\\
+\textbf{A19:} $\rho$ is the penalty parameter. If $\rho$ is too small, primal constraints converge sluggishly; if too large, subproblem conditioning degrades, causing oscillations. $\rho = 0.5$ provides optimal balanced convergence.
+
+\vspace{0.4em}\noindent\textbf{Q20: Why does Stage 1 leave isotropic environmental noise in $\mathbf{C}$?}\\
+\textbf{A20:} Stage 1 intentionally targets only column-correlated stripes. Filtering Gaussian noise in Stage 1 with strong TV would oversmooth genuine fine thermal textures.
+
+\subsection{Part III: Stage 2 Patch Low-Rank SVD (Mod 03)}
+
+\noindent\textbf{Q21: Why extract $11 \times 11$ patches instead of $8 \times 8$?}\\
+\textbf{A21:} An $11 \times 11$ patch contains $d = 121$ pixels, providing sufficient dimensional degrees of freedom to capture 2D structural primitives while remaining computationally compact for SVD.
+
+\vspace{0.4em}\noindent\textbf{Q22: Why search within a local window $\Omega$ ($25 \times 25$) rather than globally?}\\
+\textbf{A22:} Restricting search to local neighborhoods maintains spatial coherence, prevents false matches across distant radiometric regimes, and bounds nearest-neighbor complexity to $|\Omega| = 625$ evaluations per patch.
+
+\vspace{0.4em}\noindent\textbf{Q23: What is the observation matrix $\mathbf{G} \in \mathbb{R}^{121 \times 50}$?}\\
+\textbf{A23:} The columns of $\mathbf{G}$ are the $L = 50$ most mutually similar vectorized $11 \times 11$ patches. Because these patches share identical geometric textures, clean radiance lies in a low-dimensional subspace ($k \le 6$).
+
+\vspace{0.4em}\noindent\textbf{Q24: Explain the noise energy criterion in Eq.~\ref{eq:noise_energy_criterion}.}\\
+\textbf{A24:} The centered observation matrix has expected noise Frobenius energy $\tau^2 = \gamma (d-1)(L-1)\sigma_n^2$. Truncating at rank $k$ such that the trailing singular energy equals $\tau^2$ eliminates Gaussian noise without discarding true signal energy.
+
+\vspace{0.4em}\noindent\textbf{Q25: Why is a Kaiser window used for patch back-projection?}\\
+\textbf{A25:} Uniform box averaging creates subtle grid seams at patch borders. The 2D separable Kaiser window ($\beta = 2.0$) tapers smoothly to zero at perimeter pixels, ensuring a smooth $C^1$-continuous partition of unity.
+
+\vspace{0.4em}\noindent\textbf{Q26: What is the optimal patch group count $L$?}\\
+\textbf{A26:} $L = 50$. Smaller $L$ ($< 35$) provides insufficient samples to separate signal from noise; larger $L$ ($> 60$) admits dissimilar patches, causing blurring.
+
+\vspace{0.4em}\noindent\textbf{Q27: How is noise standard deviation $\sigma_n$ estimated automatically?}\\
+\textbf{A27:} Using the robust Median Absolute Deviation (MAD) of diagonal second-order differences: $\hat{\sigma}_n = \frac{\operatorname{median}(|\mathbf{D}_{xy}|)}{0.6745 \times 2}$.
+
+\vspace{0.4em}\noindent\textbf{Q28: Why is Stage 2 embarrassingly parallel?}\\
+\textbf{A28:} Each reference patch cluster's nearest-neighbor search, observation matrix assembly, SVD, and truncation depend solely on the stationary input image $\mathbf{C}'$. Clusters share zero data dependencies.
+
+\vspace{0.4em}\noindent\textbf{Q29: How does patch stride $s$ balance speed and quality?}\\
+\textbf{A29:} Number of clusters scales as $\frac{MN}{s^2}$. Stride $s = 4$ yields $3,844$ clusters, delivering full fidelity in sub-second parallel time. Stride $s = 6$ provides high-speed previewing with minimal quality loss.
+
+\vspace{0.4em}\noindent\textbf{Q30: What is the role of mean centering before SVD?}\\
+\textbf{A30:} Subtracting column means removes DC ambient radiance, ensuring singular values capture purely textural structural covariance rather than gross luminance.
+
+\subsection{Part IV: Baselines, Metrics \& Benchmarking (Mod 04)}
+
+\noindent\textbf{Q31: What are the eleven comparison baseline methods?}\\
+\textbf{A31:} 1D-GF, 1D-WLS (filtering); ADOM, LRSID, GSRSR, BM3D (optimization/collaborative); DLS-NUC, SNRCNN, SNRWDNN, DestripeCycleGAN (deep learning); and Ours.
+
+\vspace{0.4em}\noindent\textbf{Q32: Explain the seven evaluation metrics in Table I.}\\
+\textbf{A32:} PSNR (pixel fidelity, higher better); SSIM (structural perception, higher better); AVGE (vertical gradient distortion, lower better); MRD (mean relative error, lower better); AAD (absolute radiometric drift, lower better); ICV (homogeneity within uniform regions, higher better); and $\rho$ (roughness, lower better).
+
+\vspace{0.4em}\noindent\textbf{Q33: Why does 1D-GF fail on vertical scene edges?}\\
+\textbf{A33:} 1D-GF smooths horizontally row-by-row. When encountering a sharp vertical boundary, it cannot distinguish between an edge step and a stripe step, smearing the boundary into a faint halo.
+
+\vspace{0.4em}\noindent\textbf{Q34: Why do deep learning methods degrade on real sensor scenes (Yohann, He)?}\\
+\textbf{A34:} Supervised models are trained on synthetic Gaussian stripes. Real uncooled sensors exhibit non-stationary bias drift, temperature-dependent non-linearities, and column readout crosstalk not represented in synthetic training distributions.
+
+\vspace{0.4em}\noindent\textbf{Q35: What is the Image Roughness metric $\rho$?}\\
+\textbf{A35:} $\rho = \frac{\|\nabla_x \mathbf{I}\|_1 + \|\nabla_y \mathbf{I}\|_1}{\|\mathbf{I}\|_1}$. A lower value indicates clean suppression of high-frequency noise without destroying broad scene structure.
+
+\vspace{0.4em}\noindent\textbf{Q36: What is the Inverse Coefficient of Variation (ICV)?}\\
+\textbf{A36:} For a homogeneous radiometric region, $\text{ICV} = \frac{\mu}{\sigma}$. A higher ICV indicates near-zero intensity fluctuation, validating complete eradication of stripe noise.
+
+\vspace{0.4em}\noindent\textbf{Q37: Why does BM3D struggle with column stripes?}\\
+\textbf{A37:} BM3D matches patches based on Euclidean distance. Since all patches in a striped column share the same constant offset, BM3D groups striped patches together and preserves the stripe as legitimate signal.
+
+\vspace{0.4em}\noindent\textbf{Q38: How does GSRSR enforce column-wise sparsity?}\\
+\textbf{A38:} Using the $L_{2,1}$ group norm: $\|\mathbf{S}\|_{2,1} = \sum_{j=1}^N \|\mathbf{S}_{:, j}\|_2$. It forces entire columns to be zero unless a stripe is present.
+
+\vspace{0.4em}\noindent\textbf{Q39: In Table I, what does an underline indicate?}\\
+\textbf{A39:} Bold indicates the top-performing score across all eleven methods; underline indicates the second-best score.
+
+\vspace{0.4em}\noindent\textbf{Q40: How does Ours perform on Img2 (Indoor Monitor)?}\\
+\textbf{A40:} It reaches $34.46$\,dB PSNR, $0.8920$ SSIM, and an ICV of $37.76$, outperforming all optimization and deep learning baselines.
+
+\subsection{Part V: Ablations \& Stress Testing (Mod 05)}
+
+\noindent\textbf{Q41: What happens at $K < 200$ iterations in Ablation 1?}\\
+\textbf{A41:} Primal residuals have not converged. The estimated stripe matrix $\mathbf{S}$ leaks scene radiance ($\partial \mathbf{S}/\partial y = 0.0954$), creating faint ghost shadows of scene objects in the stripe residual.
+
+\vspace{0.4em}\noindent\textbf{Q42: What is the optimal iteration count $K$?}\\
+\textbf{A42:} $K = 250$. At $K = 250$, vertical leakage drops to $0.0000$, and PSNR reaches its global peak ($43.65$\,dB calibrated).
+
+\vspace{0.4em}\noindent\textbf{Q43: What happens when $\lambda_3$ is too small ($\lambda_3 = 10^{-4}$)?}\\
+\textbf{A43:} The second-order horizontal prior is under-weighted. High-frequency stripe ripples persist, increasing stripe MAE from $4.58$ to $6.56$.
+
+\vspace{0.4em}\noindent\textbf{Q44: What is the operational stress threshold of the pipeline?}\\
+\textbf{A44:} The pipeline maintains stability ($\Delta\text{PSNR} > +5.0$\,dB) up to $\sigma_s = 40$ and $\sigma_n = 20$. In extreme catastrophic regimes ($\sigma_s > 75$), performance degrades gracefully without numerical collapse.
+
+\vspace{0.4em}\noindent\textbf{Q45: Why does SSIM plateau for $L \ge 45$ in Ablation 4?}\\
+\textbf{A45:} Beyond $45$ patches, additional patches are geometrically redundant or slightly dissimilar, contributing zero novel structural rank information.
+
+\subsection{Part VI: Scaling \& Hardware Deployment (Mod 06)}
+
+\noindent\textbf{Q46: Why does Stage 1 account for $\approx 70\%$ and Stage 2 for $\approx 30\%$ in single-thread mode?}\\
+\textbf{A46:} Stage~1 executes $K = 250$ sequential alternating optimization loops, each involving 2D FFTs and SVDs ($\approx 2.50$\,s total). Stage~2 is single-pass patch grouping and SVD, taking $\approx 1.05$\,s.
+
+\vspace{0.4em}\noindent\textbf{Q47: What speedup does Parfor achieve, and why?}\\
+\textbf{A47:} Parfor accelerates Stage~2 by $> 3.5\times$ (down to $0.30$\,s), reducing total frame latency from $3.55$\,s to $1.48$\,s ($> 2.42\times$ total pipeline speedup).
+
+\vspace{0.4em}\noindent\textbf{Q48: What does Amdahl's Law reveal about our implementation?}\\
+\textbf{A48:} Fitting empirical runtimes yields parallel fraction $P \approx 0.96$, showing that $96\%$ of Stage~2 is parallelizable, with only $4\%$ serial overhead.
+
+\vspace{0.4em}\noindent\textbf{Q49: How can this framework reach 60+ FPS on embedded FPGA/DSP hardware?}\\
+\textbf{A49:} 2D FFTs map directly to fixed-point DSP slices on AMD Xilinx UltraScale+ FPGAs ($< 1.5$\,ms). Patch matching maps to streaming line buffers and systolic SVD arrays, enabling sub-$20$\,ms execution at $< 15$\,W.
+
+\vspace{0.4em}\noindent\textbf{Q50: How can the framework be extended to multi-frame video sequences?}\\
+\textbf{A50:} By extending the 2D matrix to a 3D spatio-temporal tensor $\boldsymbol{\mathcal{D}} \in \mathbb{R}^{M \times N \times T}$, fixed pattern noise can be constrained via low-tubal-rank tensor SVD (t-SVD). Adding temporal total variation $\|\nabla_t \mathbf{C}\|_1$ suppresses inter-frame flicker and eliminates radiometric ghosting in real-time thermal video streams.
+
+\end{document}

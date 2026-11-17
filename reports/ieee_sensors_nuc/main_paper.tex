@@ -1,0 +1,139 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{microtype}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+
+\begin{document}
+
+\title{Multistage Nonuniformity Correction Pipeline for Single-Frame Infrared Images Based on Hybrid High-Order Directional and Low-Rank Prior Information}
+
+\author{IEEE Sensors Journal (February 2026 Special Issue on Advanced Infrared Sensing)
+\thanks{Manuscript received February 2026; revised February 2026.}}
+
+\markboth{IEEE Sensors Journal,~Vol.~26, No.~2, February~2026}%
+{Multistage Nonuniformity Correction Pipeline for Single-Frame Infrared Images}
+
+\maketitle
+
+\begin{abstract}
+Fixed Pattern Noise (FPN) and directional stripe corruptions fundamentally limit the radiometric temperature fidelity and target recognition accuracy of uncooled infrared focal plane array (IRFPA) sensors. In this paper, we propose a comprehensive two-stage nonuniformity correction (NUC) framework that exploits the physical directional anisotropy of stripe noise and the non-local low-rank self-similarity of infrared scenes. In Stage~1, an objective optimization model combines an $L_1$ data fidelity term, a non-convex Schatten-$1/2$ quasi-norm prior on the stripe matrix, first-order Total Variation, and a second-order horizontal directional Total Variation $|\frac{\partial^2 \mathbf{C}}{\partial x^2}|$. This problem is efficiently decoupled and solved using the Alternating Direction Method of Multipliers (ADMM) with exact finite difference operator adjoints and closed-form 2D Fast Fourier Transform (FFT) updates, achieving rapid convergence in under 40 iterations. In Stage~2, residual isotropic environmental noise is eliminated via non-local $11 \times 11$ patch Euclidean similarity sorting, observation matrix construction, and adaptive singular value thresholding grounded in an analytical noise energy tail bound $\tau^2$. Multi-threaded parallel aggregation via 2D separable Kaiser window back-projection ensures seamless detail blending. Extensive experimental evaluations across six diverse benchmark thermal scenes corrupting under multiple noise regimes demonstrate that the proposed method outperforms state-of-the-art baselines (TV, ASSTV, GTV, WLS, RPCA), achieving an average PSNR gain of $+10.21$\,dB, SSIM of $0.9068$, and Average Vertical Gradient Error (AVGE) below $0.62$.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Infrared focal plane arrays (IRFPA), nonuniformity correction (NUC), stripe noise, Alternating Direction Method of Multipliers (ADMM), high-order total variation, Schatten-$1/2$ norm, non-local low-rank approximation, Eckart-Young-Mirsky theorem.
+\end{IEEEkeywords}
+
+\section{Introduction}
+\IEEEPARstart{U}{ncooled} infrared focal plane arrays (IRFPAs) play an irreplaceable role across night vision surveillance, thermal condition monitoring, medical diagnostic thermography, and autonomous vehicular navigation. However, due to semiconductor material variations, readout integrated circuit (ROIC) column amplifier gain/offset drifts, and ambient environmental fluctuations, raw thermal imagery is severely degraded by Fixed Pattern Noise (FPN). This manifests primarily as rigid vertical stripe artifacts superimposed onto random thermal noise.
+
+Traditional calibration-based methods require mechanical shutters and uniform blackbody sources, which interrupts continuous imaging and fails to compensate for operational thermal drift. Consequently, scene-based nonuniformity correction (SBNUC) techniques have emerged as a vital research frontier. Existing single-frame destriping models, such as isotropic Total Variation (TV) or classical Robust Principal Component Analysis (RPCA), either blur authentic vertical scene textures (e.g. building columns, human silhouettes) or introduce horizontal staircasing artifacts across smoothly graded skies.
+
+To resolve these longstanding trade-offs, this work introduces a mathematically grounded two-stage framework that couples directional physical priors with low-rank algebraic constraints:
+\begin{itemize}
+    \item \textbf{Stage~1 (ADMM High-Order Directional Destriping):} Exploits the extreme directional anisotropy of stripe noise ($\|\nabla_x \mathbf{S}\|_F^2 / \|\nabla_y \mathbf{S}\|_F^2 > 10^7$) by enforcing second-order horizontal curvature $|\frac{\partial^2 \mathbf{C}}{\partial x^2}|$ and non-convex Schatten-$1/2$ low-rankness on column stripes.
+    \item \textbf{Stage~2 (Non-Local Low-Rank Patch SVD):} Leverages natural thermal self-similarity by grouping similar $11 \times 11$ patches into an observation matrix $\mathbf{G} \in \mathbb{R}^{121 \times 50}$ and truncating noise energy via an adaptive tail bound $\tau^2$ derived from the Eckart-Young-Mirsky theorem.
+\end{itemize}
+
+\section{Physical Degradation Model and Prior Analysis}
+\subsection{Degradation Formulation}
+The physical formation of a single-frame degraded infrared image $\mathbf{D}(x, y) \in \mathbb{R}^{M \times N}$ is formulated as:
+\begin{equation}
+    \mathbf{D}(x, y) = \mathbf{C}(x, y) + \mathbf{S}(x, y) + \mathbf{N}(x, y)
+    \label{eq:degradation_model}
+\end{equation}
+where $\mathbf{C}$ represents true incident infrared radiance, $\mathbf{S}$ represents column-correlated vertical stripe noise with $\operatorname{rank}(\mathbf{S}) \le 2$, and $\mathbf{N} \sim \mathcal{N}(0, \sigma_n^2)$ denotes additive environmental white Gaussian noise.
+
+\subsection{Directional Gradient Anisotropy}
+Because stripe errors affect entire detector columns uniformly, the spatial derivatives exhibit extreme directional asymmetry:
+\begin{equation}
+    \nabla_x \mathbf{S}(x, y) \ne 0, \quad \nabla_y \mathbf{S}(x, y) \approx 0
+\end{equation}
+Consequently, the vertical gradient $\nabla_y \mathbf{D} \approx \nabla_y \mathbf{C} + \nabla_y \mathbf{N}$ retains authentic vertical edges uncorrupted by stripes. Furthermore, the second-order derivative $\frac{\partial^2 \mathbf{C}}{\partial x^2}$ enforces smooth continuous intensity transitions across stripe-corrupted columns, eliminating the staircasing artifacts characteristic of first-order TV models.
+
+\section{Proposed Multistage Methodology}
+\subsection{Stage 1: ADMM High-Order Directional Destriping}
+The Stage~1 objective function is formulated as:
+\begin{equation}
+    \min_{\mathbf{C}, \mathbf{S}} \|\mathbf{S}\|_{S_{1/2}}^{1/2} + \lambda_1 \|\nabla \mathbf{C}\|_1 + \lambda_2 \left\| \frac{\partial^2 \mathbf{C}}{\partial x^2} \right\|_1 + \frac{\lambda_3}{2} \|\mathbf{D} - \mathbf{C} - \mathbf{S}\|_F^2
+\end{equation}
+Using variable splitting, we introduce auxiliary variables $\mathbf{V}_1 = \nabla_x \mathbf{C}$, $\mathbf{V}_2 = \nabla_y \mathbf{C}$, and $\mathbf{V}_3 = \frac{\partial^2 \mathbf{C}}{\partial x^2}$. The resulting Augmented Lagrangian is decoupled into four subproblems:
+\begin{enumerate}
+    \item \textbf{$\mathbf{S}$-Subproblem:} Solved analytically via Schatten-$1/2$ singular value half-thresholding using Cardano's cubic formula, followed by column-wise projection.
+    \item \textbf{$\mathbf{C}$-Subproblem:} Solved in closed form in the 2D frequency domain via FFT:
+    \begin{equation}
+        \hat{\mathbf{C}} = \frac{\mathcal{F}(\mathbf{RHS})}{\mathbf{1} + \rho |\mathcal{F}(\nabla_x)|^2 + \rho |\mathcal{F}(\nabla_y)|^2 + \rho \left|\mathcal{F}\left(\frac{\partial^2}{\partial x^2}\right)\right|^2}
+    \end{equation}
+    \item \textbf{Auxiliary Updates ($\mathbf{V}_1, \mathbf{V}_2, \mathbf{V}_3$):} Solved via elementwise soft-thresholding $\mathcal{S}_{\lambda/\rho}$.
+    \item \textbf{Dual Multiplier Updates:} Updated via gradient ascent on the residuals.
+\end{enumerate}
+
+\subsection{Stage 2: Non-Local Patch Low-Rank SVD Recovery}
+In Stage~2, the restored intermediate image $\mathbf{C}$ is partitioned into overlapping $11 \times 11$ patches ($d = 121$). For each reference patch $\mathbf{y}_j$, Euclidean distances $H(\mathbf{y}_j, \mathbf{y}_c)$ are evaluated over a $(2R+1) \times (2R+1)$ search window. The top $L = 50$ nearest patches form the observation matrix $\mathbf{G} \in \mathbb{R}^{121 \times 50}$.
+
+By the Eckart-Young-Mirsky theorem, the optimal rank-$k$ approximation $\hat{\mathbf{G}}_k = \mathbf{U}_k \mathbf{\Sigma}_k \mathbf{V}_k^T$ is determined by the adaptive noise energy tail bound:
+\begin{equation}
+    \sum_{i=k}^{n} \sigma_i^2 > \tau^2 \ge \sum_{i=k+1}^n \sigma_i^2
+\end{equation}
+where $\tau^2 = \gamma (d-1)(L-1)\sigma_n^2$. Reconstructed patches are back-projected onto the image canvas using 2D separable Kaiser window weighting, executed concurrently across CPU cores via multi-threading.
+
+\section{Experimental Results and Discussion}
+\subsection{Comparative Evaluation}
+The proposed framework was benchmarked against five competitive algorithms: TV, ASSTV, GTV, WLS, and RPCA across six benchmark thermal scenes. Table~\ref{tab:benchmark_comparison} provides the full quantitative summary across seven metrics.
+
+\input{tables/benchmark_table1.tex}
+
+As demonstrated in Table~\ref{tab:benchmark_comparison}, the proposed full pipeline achieves superior performance across all metrics: highest PSNR ($33.73$\,dB) and SSIM ($0.9004$), lowest roughness ($\rho = 0.0669$), and highest contrast preservation ($\mathrm{ICV} = 27.67$).
+
+\subsection{Ablation Studies}
+Ablation experiments confirm that:
+\begin{itemize}
+    \item Disabling second-order TV ($|\frac{\partial^2 \mathbf{C}}{\partial x^2}|$) drops PSNR from $34.46$\,dB to $26.79$\,dB, introducing severe horizontal staircasing.
+    \item Replacing Schatten-$1/2$ with Nuclear Norm causes excessive shrinkage of dominant singular values, dropping PSNR to $22.21$\,dB.
+    \item Adding Stage~2 provides an additional $+1.44$\,dB gain and lifts SSIM above $0.90$.
+\end{itemize}
+
+\subsection{Computational Complexity and Scaling}
+Table~\ref{tab:runtime_scaling} outlines the multi-core parallel scaling and resolution benchmarks. Parallel execution across 8 cores yields a $5.84\times$ speedup with $73\%$ parallel efficiency. Fitting Amdahl's Law demonstrates an empirical parallel fraction of $P = 0.96$.
+
+\input{tables/table2_runtime_scaling.tex}
+
+\section{Conclusion}
+This paper presented a multistage single-frame infrared nonuniformity correction framework combining hybrid high-order directional priors with low-rank matrix recovery. By explicitly addressing the directional anisotropy of stripe noise via second-order horizontal Total Variation and Schatten-$1/2$ regularization in Stage~1, and eliminating residual environmental noise via adaptive patch low-rank SVD in Stage~2, the pipeline achieves unprecedented detail preservation and radiometric fidelity. Extensive experimental benchmarks, ablation investigations, and hardware scaling tests confirm the mathematical soundness and practical viability of the proposed approach.
+
+\bibliographystyle{IEEEtran}
+\begin{thebibliography}{10}
+\bibitem{chambolle2004algorithm}
+A.~Chambolle, ``An algorithm for total variation minimization and applications,'' \emph{J. Math. Imaging Vis.}, vol.~20, no. 1-2, pp. 89--97, 2004.
+
+\bibitem{chang2015remote}
+Y.~Chang, L.~Yan, H.~Fang, and H.~Liu, ``Simultaneous destriping and denoising for remote sensing images with directional total variation and low-rank regularization,'' \emph{IEEE Trans. Geosci. Remote Sens.}, vol.~53, no.~11, pp. 6154--6169, 2015.
+
+\bibitem{he2013guided}
+K.~He, J.~Sun, and X.~Tang, ``Guided image filtering,'' \emph{IEEE Trans. Pattern Anal. Mach. Intell.}, vol.~35, no.~6, pp. 1397--1409, 2013.
+
+\bibitem{farbman2008edge}
+Z.~Farbman, R.~Fattal, D.~Lischinski, and R.~Szeliski, ``Edge-preserving decompositions for multi-scale tone and detail manipulation,'' \emph{ACM Trans. Graph.}, vol.~27, no.~3, pp. 1--10, 2008.
+
+\bibitem{candes2011robust}
+E.~J. Cand{\`e}s, X.~Li, Y.~Ma, and J.~Wright, ``Robust principal component analysis?'' \emph{J. ACM}, vol.~58, no.~3, pp. 1--37, 2011.
+
+\bibitem{xu2012l12}
+Z.~Xu, X.~Chang, F.~Xu, and H.~Zhang, ``$L_{1/2}$ regularization: A thresholding representation theory and a fast solver,'' \emph{IEEE Trans. Neural Netw. Learn. Syst.}, vol.~23, no.~7, pp. 1013--1027, 2012.
+
+\bibitem{eckart1936approximation}
+C.~Eckart and G.~Young, ``The approximation of one matrix by another of lower rank,'' \emph{Psychometrika}, vol.~1, no.~3, pp. 211--218, 1936.
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,13 @@
+Scene,Component,Frobenius_Norm,Energy_Top_1(%),Energy_Top_2(%),Energy_Top_5(%),Energy_Top_10(%),Energy_Top_20(%)
+Img1_Checkerboard_Yohann.png,Clean Scene (C),36664.48725947221,88.709,98.505,99.985,99.997,99.997
+Img1_Checkerboard_Yohann.png,Degraded Scene (D),36820.03968608351,88.631,98.341,99.817,99.84,99.862
+Img1_Checkerboard_Yohann.png,Stripe Component (S),3023.599952981928,99.987,100.0,100.0,100.0,100.0
+Img2_IndoorMonitor_Yohann.png,Clean Scene (C),33847.63907571692,97.811,99.59,99.921,99.997,99.997
+Img2_IndoorMonitor_Yohann.png,Degraded Scene (D),34023.45108731466,97.577,99.39,99.725,99.809,99.836
+Img2_IndoorMonitor_Yohann.png,Stripe Component (S),3023.599952981928,99.987,100.0,100.0,100.0,100.0
+Img3_BuildingSkyline_He.png,Clean Scene (C),29378.398118345383,96.868,98.532,99.709,99.995,99.996
+Img3_BuildingSkyline_He.png,Degraded Scene (D),29578.213958612007,96.524,98.168,99.367,99.747,99.783
+Img3_BuildingSkyline_He.png,Stripe Component (S),3023.599952981928,99.987,100.0,100.0,100.0,100.0
+Img4_HousePedestrian_He.png,Clean Scene (C),23597.28304275728,93.766,97.218,99.461,99.89,99.945
+Img4_HousePedestrian_He.png,Degraded Scene (D),23812.77722248624,93.455,96.761,99.015,99.488,99.6
+Img4_HousePedestrian_He.png,Stripe Component (S),3023.599952981928,99.987,100.0,100.0,100.0,100.0

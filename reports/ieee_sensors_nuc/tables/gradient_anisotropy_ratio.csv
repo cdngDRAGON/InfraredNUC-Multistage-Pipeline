@@ -1,0 +1,19 @@
+Scene,Case,Energy_grad_x,Energy_grad_y,Anisotropy_Ratio
+Img1_Checkerboard_Yohann.png,Case 1,18642866.59,0.12,155973872.18
+Img1_Checkerboard_Yohann.png,Case 2,12080725.58,0.22,55698315.69
+Img1_Checkerboard_Yohann.png,Case 3,94001216.9,2.71,34744900.1
+Img2_IndoorMonitor_Yohann.png,Case 1,18642866.59,0.12,155973872.18
+Img2_IndoorMonitor_Yohann.png,Case 2,12080725.58,0.22,55698315.69
+Img2_IndoorMonitor_Yohann.png,Case 3,94001216.9,2.71,34744900.1
+Img3_BuildingSkyline_He.png,Case 1,18642866.59,0.12,155973872.18
+Img3_BuildingSkyline_He.png,Case 2,12080725.58,0.22,55698315.69
+Img3_BuildingSkyline_He.png,Case 3,94001216.9,2.71,34744900.1
+Img4_HousePedestrian_He.png,Case 1,18642866.59,0.12,155973872.18
+Img4_HousePedestrian_He.png,Case 2,12080725.58,0.22,55698315.69
+Img4_HousePedestrian_He.png,Case 3,94001216.9,2.71,34744900.1
+Img5_FacadeWindows_TNO.png,Case 1,18642866.59,0.12,155973872.18
+Img5_FacadeWindows_TNO.png,Case 2,12080725.58,0.22,55698315.69
+Img5_FacadeWindows_TNO.png,Case 3,94001216.9,2.71,34744900.1
+Img6_StreetCars_LLVIP.png,Case 1,18642866.59,0.12,155973872.18
+Img6_StreetCars_LLVIP.png,Case 2,12080725.58,0.22,55698315.69
+Img6_StreetCars_LLVIP.png,Case 3,94001216.9,2.71,34744900.1

@@ -1,0 +1,21 @@
+\begin{table*}[t]
+\centering
+\caption{Quantitative Evaluation on Six Simulated Benchmark Infrared Scenes (Table I Equiv.)}
+\label{tab:benchmark_comparison}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccccccc}
+\hline\hline
+\textbf{Method} & \textbf{PSNR (dB)} $\uparrow$ & \textbf{SSIM} $\uparrow$ & \textbf{AVGE} $\downarrow$ & \textbf{Roughness $\rho$} $\downarrow$ & \textbf{ICV} $\uparrow$ & \textbf{AAD} $\downarrow$ & \textbf{MRD} $\downarrow$ & \textbf{Time (s)} $\downarrow$ \\
+\hline
+Degraded & 26.05 & 0.5023 & 5.6606 & 0.2189 & 8.61 & 10.0358 & 0.1096 & 0.00 \\
+TV & 17.22 & 0.2001 & 48.3883 & 1.0140 & 3.06 & 31.4982 & 0.3432 & 0.02 \\
+ASSTV & 26.24 & 0.5124 & 4.1048 & 0.1992 & 8.82 & 9.8176 & 0.1072 & 0.10 \\
+GTV & 28.32 & 0.6306 & 3.8321 & 0.1422 & 11.37 & 7.5580 & 0.0818 & 0.11 \\
+WLS & 26.05 & 0.5023 & 5.6605 & 0.2189 & 8.61 & 10.0358 & 0.1096 & 0.00 \\
+RPCA & 26.43 & 0.5248 & 3.2607 & 0.1872 & 8.78 & 9.5470 & 0.1036 & 0.14 \\
+Proposed Stage1 & 33.29 & 0.8749 & 3.5352 & 0.0804 & 23.81 & 4.2679 & 0.0459 & 0.45 \\
+\textbf{Proposed Full (Ours)} & \textbf{33.73} & \textbf{0.9004} & \textbf{2.7590} & \textbf{0.0669} & \textbf{27.67} & \textbf{4.0330} & \textbf{0.0433} & 8.84 \\
+\hline\hline
+\end{tabular}
+}
+\end{table*}

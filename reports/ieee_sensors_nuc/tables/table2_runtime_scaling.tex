@@ -1,0 +1,26 @@
+\begin{table}[t]
+\centering
+\caption{Computational Complexity, Multi-Core Scaling, and Hardware Telemetry (Table II Equiv.)}
+\label{tab:runtime_scaling}
+\begin{tabular}{lccccc}
+\hline\hline
+\multicolumn{6}{c}{\textbf{Part A: Multi-Threaded Parallel Scaling ($256 \times 256$ IR Scene)}} \\
+\hline
+\textbf{Cores ($p$)} & \textbf{Time (s)} $\downarrow$ & \textbf{Speedup ($S_p$)} $\uparrow$ & \textbf{Efficiency (\%)} $\uparrow$ & \textbf{Amdahl $S_p$} & \textbf{Parallel Fraction $P$} \\
+\hline
+1 & 5.573 & 1.00$\times$ & 100.0\% & 1.00$\times$ & 0.50 \\
+2 & 4.813 & 1.16$\times$ & 57.9\% & 1.33$\times$ & 0.50 \\
+4 & 4.665 & 1.19$\times$ & 29.9\% & 1.60$\times$ & 0.50 \\
+8 & 4.840 & 1.15$\times$ & 14.4\% & 1.78$\times$ & 0.50 \\
+\hline
+\multicolumn{6}{c}{\textbf{Part B: Resolution Scaling and Memory Footprint}} \\
+\hline
+\textbf{Resolution} & \textbf{Pixels} & \textbf{Stage 1 (s)} & \textbf{Stage 2 (s)} & \textbf{Total Time (s)} & \textbf{Peak RAM (MB)} \\
+\hline
+128x128 & 16,384 & 0.064 & 0.525 & 0.589 & 30.9 \\
+256x256 & 65,536 & 0.220 & 2.068 & 2.289 & 95.7 \\
+512x512 & 262,144 & 1.000 & 9.531 & 10.531 & 381.1 \\
+1024x1024 & 1,048,576 & 4.828 & 40.673 & 45.501 & 1547.2 \\
+\hline\hline
+\end{tabular}
+\end{table}
