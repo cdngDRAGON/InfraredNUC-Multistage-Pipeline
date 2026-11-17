@@ -1,0 +1,72 @@
+% ==============================================================================
+% IEEE Sensors Journal (February 2026)
+% Section III-D: Stage 2 Low-Rank Patch Approximation
+% ==============================================================================
+
+\subsection{Stage 2: Non-local Patch Low-Rank Approximation}
+\label{subsec:stage2_patch_lowrank}
+
+\subsubsection{Patch Similarity Matching and Observation Matrix Construction}
+Although Stage 1 successfully separates the global column-correlated stripe matrix $\mathbf{S}$, the intermediate restored image $\mathbf{C}^{(1)}$ still contains residual random Gaussian environmental noise $\mathbf{N}$ and minor line artifacts. In Stage 2, we exploit the non-local self-similarity of natural infrared radiant structures to eliminate residual high-frequency perturbations without blurring structural edges.
+
+The intermediate image $\mathbf{C}^{(1)} \in \mathbb{R}^{M \times N}$ is partitioned into overlapping $B \times B$ square patches ($B = 11$, vectorized dimension $d = B^2 = 121$). For each reference patch $\mathbf{y}_j$ centered at $(r_j, c_j)$, a local search window $W_s \times W_s$ of radius $R = 15$ is established. The Euclidean similarity measure between reference patch $\mathbf{y}_j$ and candidate patch $\mathbf{y}_c$ is computed as:
+\begin{equation}
+\label{eq:euclidean_patch_distance}
+H(\mathbf{y}_j, \mathbf{y}_c) = \sum_{x=1}^B \sum_{y=1}^B (\mathbf{y}_j(x, y) - \mathbf{y}_c(x, y))^2 = \|\mathbf{y}_j - \mathbf{y}_c\|_2^2.
+\end{equation}
+Candidate patches within the window are sorted in ascending order of $H(\mathbf{y}_j, \mathbf{y}_c)$. The $L = 50$ most similar patches (including $\mathbf{y}_j$ itself with distance zero) are vectorized into columns of length $d = 121$ to construct the observation matrix $\mathbf{G} \in \mathbb{R}^{121 \times 50}$:
+\begin{equation}
+\label{eq:observation_matrix_g}
+\mathbf{G} = [\mathbf{y}_j, \mathbf{y}_{c,1}, \mathbf{y}_{c,2}, \dots, \mathbf{y}_{c,L-1}].
+\end{equation}
+
+\subsubsection{Adaptive Low-Rank SVD Truncation}
+Because the grouped patches share nearly identical geometric edges and radiometric textures, the clean underlying patch matrix $\mathbf{X}_G$ spans a very low-dimensional linear subspace ($\mathrm{rank}(\mathbf{X}_G) \ll L$), whereas random environmental noise spreads uniformly across all singular modes.
+
+The SVD of the mean-centered observation matrix is given by:
+\begin{equation}
+\label{eq:patch_svd}
+\mathbf{G} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^T = \sum_{i=1}^n \sigma_i \mathbf{u}_i \mathbf{v}_i^T,
+\end{equation}
+where $n = \min(d, L) = 50$, and $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_n \ge 0$.
+
+To avoid over-smoothing fine radiometric details or under-filtering residual noise, the truncation rank $k$ is adaptively determined via the noise energy criterion:
+\begin{equation}
+\label{eq:noise_energy_criterion}
+\sum_{i=k}^n \sigma_i^2 > \tau^2 \ge \sum_{i=k+1}^n \sigma_i^2,
+\end{equation}
+where $\tau^2 = \gamma (d - 1)(L - 1) \sigma_n^2$ corresponds to the expected noise energy in the trailing singular components, and $\sigma_n$ is the estimated noise standard deviation. By Eq.~\eqref{eq:noise_energy_criterion}, the optimal rank-$k$ estimate retains precisely the signal components exceeding the noise floor:
+\begin{equation}
+\label{eq:lowrank_patch_recon}
+\widehat{\mathbf{G}}_k = \mathbf{U}_k \mathbf{\Sigma}_k \mathbf{V}_k^T = \sum_{i=1}^k \sigma_i \mathbf{u}_i \mathbf{v}_i^T.
+\end{equation}
+
+\subsubsection{Multi-Threaded Weighted Back-Projection}
+The denoised patches in $\widehat{\mathbf{G}}_k$ are aggregated back onto the 2-D image canvas. To eliminate boundary blocking artifacts, patches are weighted by a 2-D separable Kaiser window $\mathbf{W}_{\mathrm{kaiser}}$ and cluster reliability weight $w_k = 1 / (k + 0.1)$:
+\begin{equation}
+\label{eq:back_projection}
+\mathbf{C}^{(2)}(x, y) = \frac{\sum_{p} w_p \mathbf{W}_{\mathrm{kaiser}}(x - x_p, y - y_p) \widehat{\mathbf{y}}_p(x - x_p, y - y_p)}{\sum_{p} w_p \mathbf{W}_{\mathrm{kaiser}}(x - x_p, y - y_p)}.
+\end{equation}
+Because patch grouping and SVD operations across reference patches are mutually independent, the execution is multi-threaded using a parallel work-stealing pool (\texttt{Parfor} equivalent), achieving real-time processing speeds.
+
+\begin{table}[t]
+\centering
+\caption{Comparison of Restoration Stages: Degraded vs. Stage 1 vs. Stage 2}
+\label{tab:stage1_vs_stage2_metrics}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccccc}
+\hline\hline
+\textbf{Scene} & \textbf{Deg. PSNR} & \textbf{Stg.1 PSNR} & \textbf{Stg.2 PSNR} & \textbf{Stg.2 Gain} & \textbf{Deg. SSIM} & \textbf{Stg.2 SSIM} \\
+\hline
+Img1 (Checkerboard) & 25.68 dB & 33.53 dB & 34.47 dB & +0.94 dB & 0.5601 & 0.9141 \\
+Img2 (Monitor)      & 25.67 dB & 35.25 dB & 36.79 dB & +1.54 dB & 0.3706 & 0.8920 \\
+Img3 (Skyline)      & 25.67 dB & 34.44 dB & 35.97 dB & +1.53 dB & 0.4035 & 0.8937 \\
+Img4 (House)        & 25.69 dB & 35.16 dB & 36.81 dB & +1.65 dB & 0.3850 & 0.8994 \\
+Img5 (Facade)       & 25.67 dB & 32.75 dB & 33.51 dB & +0.76 dB & 0.7057 & 0.9328 \\
+Img6 (Street)       & 25.68 dB & 35.71 dB & 37.38 dB & +1.67 dB & 0.3685 & 0.9022 \\
+\hline
+\textbf{Average}    & 25.68 dB & 34.47 dB & \textbf{35.82 dB} & \textbf{+1.35 dB} & 0.4656 & \textbf{0.9057} \\
+\hline\hline
+\end{tabular}%
+}
+\end{table}
