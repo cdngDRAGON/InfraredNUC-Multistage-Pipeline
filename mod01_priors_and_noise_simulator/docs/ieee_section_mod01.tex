@@ -1,0 +1,117 @@
+% ==============================================================================
+% IEEE Sensors Journal (February 2026)
+% Section: Problem Formulation, Noise Modeling, and Prior Verification
+% ==============================================================================
+
+\section{Problem Formulation and Prior Information Verification}
+\label{sec:problem_formulation}
+
+\subsection{Infrared Focal Plane Array Degradation Model}
+\label{subsec:degradation_model}
+Due to non-uniform material deposition, process fluctuations in microbolometer fabrication, and temperature drift across Read-Out Integrated Circuits (ROIC), infrared focal plane arrays (IRFPAs) exhibit pronounced fixed-pattern noise (FPN), predominantly appearing as vertical or horizontal stripes. In single-frame infrared imaging, the degraded observation matrix $\mathbf{D} \in \mathbb{R}^{M \times N}$ can be rigorously formulated as an additive decomposition:
+\begin{equation}
+\label{eq:degradation_model}
+\mathbf{D}(x, y) = \mathbf{C}(x, y) + \mathbf{S}(x, y) + \mathbf{N}(x, y),
+\end{equation}
+where $\mathbf{C} \in \mathbb{R}^{M \times N}$ denotes the latent clean infrared radiant scene, $\mathbf{S} \in \mathbb{R}^{M \times N}$ represents the column-correlated stripe non-uniformity component, and $\mathbf{N} \sim \mathcal{N}(0, \sigma_{\mathrm{env}}^2 \mathbf{I})$ corresponds to independent and identically distributed (i.i.d.) zero-mean Gaussian random environmental noise.
+
+Because readout electronics typically process infrared detector outputs in a column-parallel architecture, the stripe artifact exhibits strong column correlation across rows:
+\begin{equation}
+\label{eq:stripe_formulation}
+\mathbf{S}(x, y) = \mathbf{s}_{\mathrm{col}}(x) + \delta_{\mathbf{S}}(x, y),
+\end{equation}
+where $\mathbf{s}_{\mathrm{col}} \in \mathbb{R}^N$ is the primary 1-D column offset profile, and $\delta_{\mathbf{S}}(x, y)$ represents minute residual vertical drift ($\|\delta_{\mathbf{S}}\|_F \ll \|\mathbf{s}_{\mathrm{col}}\mathbf{1}^T\|_F$). Consequently, the stripe matrix $\mathbf{S}$ exhibits an intrinsically low-rank structure:
+\begin{equation}
+\mathrm{rank}(\mathbf{S}) \le 3 \ll \min(M, N).
+\end{equation}
+
+To systematically evaluate restoration fidelity across distinct operational regimes, we define three canonical degradation scenarios matching Fig.~\ref{fig:simulation_cases_3d_energy}:
+\begin{enumerate}
+    \item \textbf{Case 1 (Conventional FPN)}: Aperiodic column gain and offset variations simulated as $\mathbf{s}_{\mathrm{col}} \sim \mathcal{N}(0, \sigma_{\mathrm{stripe}}^2)$ ($\sigma_{\mathrm{stripe}} = 12.0$) coupled with ambient detector thermal noise ($\sigma_{\mathrm{env}} = 5.0$).
+    \item \textbf{Case 2 (Periodic Harmonic Stripe)}: Mixed periodic and random line noise modeling clock crosstalk and multiplexer harmonics, $\mathbf{s}_{\mathrm{col}}(x) = A \sin(2\pi f x + \phi) + \mathbf{s}_{\mathrm{rand}}(x)$ with amplitude $A = 15.0$, spatial frequency $f = 0.18$, and $\sigma_{\mathrm{env}} = 6.0$.
+    \item \textbf{Case 3 (Enhanced Severe Stripe)}: Multi-harmonic strong stripes with defective/saturated sensor columns, $A = 28.0$, $f = 0.22$, and elevated ambient noise ($\sigma_{\mathrm{env}} = 10.0$).
+\end{enumerate}
+
+\subsection{Low-Rank Prior Verification via SVD}
+\label{subsec:svd_lowrank}
+The low-rank structural prior is analytically justified via the Singular Value Decomposition (SVD). For any matrix $\mathbf{J} \in \mathbb{R}^{M \times N}$, the SVD is given by:
+\begin{equation}
+\label{eq:svd_expansion}
+\mathbf{J} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^T = \sum_{i=1}^r \sigma_i \mathbf{u}_i \mathbf{v}_i^T,
+\end{equation}
+where $\mathbf{U} \in \mathbb{R}^{M \times M}$ and $\mathbf{V} \in \mathbb{R}^{N \times N}$ are orthonormal matrices, $\mathbf{\Sigma} = \mathrm{diag}(\sigma_1, \dots, \sigma_r)$ contains the ordered singular values $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_r > 0$, and $r = \mathrm{rank}(\mathbf{J})$.
+
+By the Eckart-Young-Mirsky Theorem, the optimal rank-$k$ approximation $\widehat{\mathbf{J}}_k$ under the Frobenius norm satisfies:
+\begin{equation}
+\label{eq:eckart_young}
+\widehat{\mathbf{J}}_k = \arg\min_{\mathrm{rank}(\mathbf{X}) \le k} \|\mathbf{J} - \mathbf{X}\|_F = \mathbf{U}_k \mathbf{\Sigma}_k \mathbf{V}_k^T = \sum_{i=1}^k \sigma_i \mathbf{u}_i \mathbf{v}_i^T,
+\end{equation}
+with the exact reconstruction error governed by:
+\begin{equation}
+\label{eq:svd_error}
+\|\mathbf{J} - \widehat{\mathbf{J}}_k\|_F = \sqrt{\sum_{i=k+1}^r \sigma_i^2}.
+\end{equation}
+The relative Frobenius energy captured by the top $k$ singular components is defined as:
+\begin{equation}
+\label{eq:energy_ratio}
+\eta_k = \frac{\sum_{i=1}^k \sigma_i^2}{\sum_{i=1}^r \sigma_i^2} = \frac{\|\widehat{\mathbf{J}}_k\|_F^2}{\|\mathbf{J}\|_F^2}.
+\end{equation}
+
+As quantified in Table~\ref{tab:svd_energy_distribution} and illustrated in Fig.~\ref{fig:svd_distribution}, the stripe matrix $\mathbf{S}$ concentrates over $99.98\%$ of its total energy in the first singular component ($k=1$), and $100.00\%$ within $k=2$, rigorously confirming that $\mathrm{rank}(\mathbf{S}) \le 2$. Furthermore, the clean thermal scenes $\mathbf{C}$ concentrate over $98.5\%$ of their spectral energy within the top $k=5$ components due to extensive nonlocal structural self-similarity across thermal regions.
+
+\begin{table}[t]
+\centering
+\caption{Frobenius Energy Concentration Ratio $\eta_k$ (\%) Across Benchmark Scenes}
+\label{tab:svd_energy_distribution}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llccccc}
+\hline\hline
+\textbf{Scene} & \textbf{Component} & \textbf{Top-1} & \textbf{Top-2} & \textbf{Top-5} & \textbf{Top-10} & \textbf{Top-20} \\
+\hline
+Img1 (Checkerboard) & Clean ($\mathbf{C}$) & 88.71\% & 98.51\% & 99.98\% & 99.99\% & 100.00\% \\
+                    & Degraded ($\mathbf{D}$) & 88.63\% & 98.34\% & 99.82\% & 99.84\% & 99.86\% \\
+                    & Stripe ($\mathbf{S}$) & 99.99\% & 100.00\% & 100.00\% & 100.00\% & 100.00\% \\
+\hline
+Img2 (Monitor)      & Clean ($\mathbf{C}$) & 97.81\% & 99.59\% & 99.92\% & 99.99\% & 100.00\% \\
+                    & Degraded ($\mathbf{D}$) & 97.58\% & 99.39\% & 99.73\% & 99.81\% & 99.84\% \\
+                    & Stripe ($\mathbf{S}$) & 99.99\% & 100.00\% & 100.00\% & 100.00\% & 100.00\% \\
+\hline
+Img3 (Skyline)      & Clean ($\mathbf{C}$) & 96.87\% & 98.53\% & 99.71\% & 99.99\% & 100.00\% \\
+                    & Degraded ($\mathbf{D}$) & 96.52\% & 98.17\% & 99.37\% & 99.75\% & 99.78\% \\
+                    & Stripe ($\mathbf{S}$) & 99.99\% & 100.00\% & 100.00\% & 100.00\% & 100.00\% \\
+\hline
+Img4 (House)        & Clean ($\mathbf{C}$) & 93.77\% & 97.22\% & 99.46\% & 99.89\% & 99.95\% \\
+                    & Degraded ($\mathbf{D}$) & 93.46\% & 96.76\% & 99.02\% & 99.49\% & 99.60\% \\
+                    & Stripe ($\mathbf{S}$) & 99.99\% & 100.00\% & 100.00\% & 100.00\% & 100.00\% \\
+\hline\hline
+\end{tabular}%
+}
+\end{table}
+
+\subsection{Directional Gradient Anisotropy and High-Order Priors}
+\label{subsec:directional_derivatives}
+Traditional Total Variation (TV) destriping models penalize spatial gradients isotropically, frequently inducing severe horizontal edge blurring and unnatural "staircase" artifacts. To resolve this dilemma, we examine the directional differential behavior of vertical stripe fields.
+
+Consider the continuous representation of the stripe field $S(x, y) \approx s(x)$. Taking directional partial derivatives yields:
+\begin{align}
+\nabla_x S(x, y) &= \frac{\partial S}{\partial x} = s'(x) \neq 0, \label{eq:grad_x_s} \\
+\nabla_y S(x, y) &= \frac{\partial S}{\partial y} \approx 0. \label{eq:grad_y_s}
+\end{align}
+Substituting Eq.~\eqref{eq:grad_y_s} into the degradation model Eq.~\eqref{eq:degradation_model} gives:
+\begin{equation}
+\label{eq:grad_y_preservation}
+\nabla_y \mathbf{D} = \nabla_y \mathbf{C} + \nabla_y \mathbf{S} + \nabla_y \mathbf{N} \approx \nabla_y \mathbf{C} + \nabla_y \mathbf{N}.
+\end{equation}
+This establishes the primary directional principle: \textbf{the vertical gradient of the degraded observation preserves genuine latent scene edges with high fidelity}.
+
+This phenomenon is empirically validated in Fig.~\ref{fig:horizontal_gradient_energy} and Fig.~\ref{fig:vertical_gradient_energy}. Across horizontal scanlines (Position 1 at 25\%, Position 2 at 50\%, Position 3 at 75\% height), $\nabla_x \mathbf{D}$ undergoes intense, high-frequency oscillations induced by column jumps. In contrast, $\nabla_y \mathbf{D}$ closely tracks the clean gradient $\nabla_y \mathbf{C}$. Quantitatively, the directional energy ratio:
+\begin{equation}
+\mathcal{R}_{\mathrm{aniso}} = \frac{\|\nabla_x \mathbf{S}\|_F^2}{\|\nabla_y \mathbf{S}\|_F^2 + 10^{-8}} > 10^7
+\end{equation}
+demonstrates that stripe energy is concentrated exclusively in the cross-column differential domain.
+
+Extending this analysis to second-order directional derivatives demonstrates the foundation for our high-order prior (Fig.~\ref{fig:first_second_order_gradients}):
+\begin{equation}
+\frac{\partial^2 S}{\partial x^2} = s''(x) \gg 0, \quad \frac{\partial^2 S}{\partial y^2} = \frac{\partial}{\partial y}\left(\frac{\partial S}{\partial y}\right) \approx 0.
+\end{equation}
+While the second horizontal derivative $\frac{\partial^2 \mathbf{D}}{\partial x^2}$ is catastrophically distorted by stripes, the second vertical derivative $\frac{\partial^2 \mathbf{D}}{\partial y^2}$ remains intact and preserves continuous curvature. Incorporating $\frac{\partial^2 \mathbf{C}}{\partial y^2}$ into the Stage 1 objective effectively eliminates staircasing artifacts while preserving vertical fine details.
